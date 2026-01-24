@@ -1,8 +1,8 @@
 import createMiddleware from 'next-intl/middleware'
 import { routing } from './i18n/routing'
+
 import NextAuth from 'next-auth'
 import authConfig from './auth.config'
-import { NextResponse } from 'next/server'
 
 const publicPages = [
   '/',
@@ -19,13 +19,6 @@ const intlMiddleware = createMiddleware(routing)
 const { auth } = NextAuth(authConfig)
 
 export default auth((req) => {
-  const { pathname } = req.nextUrl
-
-  // ✅ 1) Laisse passer STRICTEMENT la racine /
-  if (pathname === '/') {
-    return NextResponse.next()
-  }
-
   const publicPathnameRegex = RegExp(
     `^(/(${routing.locales.join('|')}))?(${publicPages
       .flatMap((p) => (p === '/' ? ['', '/'] : p))
@@ -33,7 +26,7 @@ export default auth((req) => {
     'i'
   )
 
-  const isPublicPage = publicPathnameRegex.test(pathname)
+  const isPublicPage = publicPathnameRegex.test(req.nextUrl.pathname)
 
   if (isPublicPage) {
     return intlMiddleware(req)
@@ -41,10 +34,10 @@ export default auth((req) => {
 
   if (!req.auth) {
     const newUrl = new URL(
-      `/sign-in?callbackUrl=${encodeURIComponent(pathname) || '/'}`,
+      `/sign-in?callbackUrl=${encodeURIComponent(req.nextUrl.pathname) || '/'}`,
       req.nextUrl.origin
     )
-    return NextResponse.redirect(newUrl)
+    return Response.redirect(newUrl)
   }
 
   return intlMiddleware(req)
