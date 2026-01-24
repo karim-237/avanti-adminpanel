@@ -2,6 +2,7 @@ import withNextIntl from 'next-intl/plugin';
 import path from 'path';
 
 const nextConfig = withNextIntl()({
+  transpilePackages: ['uploadthing', '@uploadthing/react', '@uploadthing/shared'],
   images: {
     domains: ['res.cloudinary.com'],
     remotePatterns: [
