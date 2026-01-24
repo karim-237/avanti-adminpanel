@@ -1,5 +1,5 @@
-import withNextIntl from 'next-intl/plugin'
-import { join } from 'path'
+import withNextIntl from 'next-intl/plugin';
+import path from 'path';
 
 const nextConfig = withNextIntl()({
   images: {
@@ -17,21 +17,22 @@ const nextConfig = withNextIntl()({
     ignoreBuildErrors: process.env.VERCEL === '1',
   },
 
-  experimental: {
-    turbo: false, // force Next.js à utiliser Webpack plutôt que Turbopack
-  },
-
-  // 🔥 Contourne TS : on ajoute eslint mais TS ne connaît pas cette clé
   eslint: {
     ignoreDuringBuilds: true,
   },
 
-  webpack(config: { module: { rules: { test: RegExp; include: string; type: string; }[]; }; }) {
-    // 🔧 Forcer @uploadthing/shared à être traité correctement en ESM
+  // ⚡ Désactiver Turbopack et forcer Webpack
+  experimental: {
+    turbo: false,
+  },
+
+  webpack(config: { module: { rules: { test: RegExp; include: string; type: string; use: never[]; }[]; }; }) {
+    // ✅ Forcer Webpack à traiter les .cts et ignorer certains fichiers
     config.module.rules.push({
-      test: /\.cts$/,
-      include: join(__dirname, 'node_modules/@uploadthing/shared'),
+      test: /\.cts$|\.md$/,
+      include: path.join(__dirname, 'node_modules/@uploadthing'),
       type: 'javascript/auto',
+      use: [],
     });
 
     return config;
