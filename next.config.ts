@@ -16,6 +16,10 @@ const nextConfig = withNextIntl()({
     ignoreBuildErrors: process.env.VERCEL === '1',
   },
 
+    experimental: {
+    esmExternals: 'loose', // <-- force le build à accepter ESM dans les modules CommonJS
+  },
+
   // 🔥 Contourne TS : on ajoute eslint mais TS ne connaît pas cette clé
   eslint: {
     ignoreDuringBuilds: true,
