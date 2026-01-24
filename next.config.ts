@@ -17,7 +17,8 @@ const nextConfig = withNextIntl()({
   },
 
     experimental: {
-    esmExternals: 'loose', // <-- force le build à accepter ESM dans les modules CommonJS
+    esmExternals: 'loose',
+    turbo: false, // <-- force le build à accepter ESM dans les modules CommonJS
   },
 
   // 🔥 Contourne TS : on ajoute eslint mais TS ne connaît pas cette clé
