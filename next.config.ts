@@ -1,4 +1,5 @@
 import withNextIntl from 'next-intl/plugin'
+import { join } from 'path'
 
 const nextConfig = withNextIntl()({
   images: {
@@ -16,15 +17,25 @@ const nextConfig = withNextIntl()({
     ignoreBuildErrors: process.env.VERCEL === '1',
   },
 
-    experimental: {
-    //esmExternals: 'loose',
-    turbo: false, // <-- force le build à accepter ESM dans les modules CommonJS
+  experimental: {
+    turbo: false, // force Next.js à utiliser Webpack plutôt que Turbopack
   },
 
   // 🔥 Contourne TS : on ajoute eslint mais TS ne connaît pas cette clé
   eslint: {
     ignoreDuringBuilds: true,
   },
-} as any) // <- <== important, on force TS à ignorer la vérification
 
-export default nextConfig
+  webpack(config: { module: { rules: { test: RegExp; include: string; type: string; }[]; }; }) {
+    // 🔧 Forcer @uploadthing/shared à être traité correctement en ESM
+    config.module.rules.push({
+      test: /\.cts$/,
+      include: join(__dirname, 'node_modules/@uploadthing/shared'),
+      type: 'javascript/auto',
+    });
+
+    return config;
+  },
+} as any);
+
+export default nextConfig;
