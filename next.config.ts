@@ -17,7 +17,7 @@ const nextConfig = withNextIntl()({
   },
 
     experimental: {
-    esmExternals: 'loose',
+    //esmExternals: 'loose',
     turbo: false, // <-- force le build à accepter ESM dans les modules CommonJS
   },
 
