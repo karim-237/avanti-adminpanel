@@ -32,17 +32,26 @@ export default auth((req) => {
     return intlMiddleware(req)
   }
 
-  if (!req.auth) {
-    const newUrl = new URL(
-      `/sign-in?callbackUrl=${encodeURIComponent(req.nextUrl.pathname) || '/'}`,
-      req.nextUrl.origin
-    )
-    return Response.redirect(newUrl)
-  }
+ if (!req.auth) {
+  // Récupérer la locale depuis l'URL ou utiliser la valeur par défaut
+  const locale = req.nextUrl.pathname.split('/')[1] || routing.defaultLocale;
+  
+  const newUrl = new URL(
+    `/${locale}/sign-in?callbackUrl=${encodeURIComponent(req.nextUrl.pathname)}`,
+    req.nextUrl.origin
+  )
+  return Response.redirect(newUrl)
+}
+
 
   return intlMiddleware(req)
 })
 
 export const config = {
-  matcher: ['/((?!api|_next|.*\\..*).*)'],
+  // Ce matcher couvre la racine, les locales et exclut les fichiers statiques
+  matcher: [
+    '/', 
+    '/(fr-FR|en-US|es-ES)/:path*', // Ajoutez ici TOUS les codes de i18n.locales
+    '/((?!api|_next|_vercel|.*\\..*).*)'
+  ],
 }
