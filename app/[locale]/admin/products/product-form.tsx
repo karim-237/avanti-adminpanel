@@ -12,7 +12,7 @@ import { toSlug } from '@/lib/utils'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
-// ❌ icon simple
+// ❌ Icon simple
 function RemoveButton({ onClick }: { onClick: () => void }) {
   return (
     <button
@@ -25,7 +25,7 @@ function RemoveButton({ onClick }: { onClick: () => void }) {
   )
 }
 
-type ProductFormInput = {
+interface ProductFormInput {
   name: string
   slug: string
   description?: string
@@ -43,33 +43,31 @@ const defaultValues: ProductFormInput = {
   images: [],
 }
 
-export default function ProductForm({
-  type,
-  product,
-  productId,
-}: {
+interface ProductFormProps {
   type: 'Créer' | 'Mettre à jour'
-  product?: any
+  product?: Partial<ProductFormInput> & {
+    image_path?: string
+    image_2?: string
+    image_3?: string
+    image_4?: string
+  }
   productId?: number
-}) {
+}
+
+export default function ProductForm({ type, product, productId }: ProductFormProps) {
   const router = useRouter()
   const { toast } = useToast()
 
   const form = useForm<ProductFormInput>({
     defaultValues: product
       ? {
-        name: product.name ?? '',
-        slug: product.slug ?? '',
-        description: product.description ?? '',
-        category: product.category ?? '',
-        active: product.active ?? true,
-        images: [
-          product.image_path,
-          product.image_2,
-          product.image_3,
-          product.image_4,
-        ].filter(Boolean),
-      }
+          name: product.name ?? '',
+          slug: product.slug ?? '',
+          description: product.description ?? '',
+          category: product.category ?? '',
+          active: product.active ?? true,
+          images: [product.image_path, product.image_2, product.image_3, product.image_4].filter(Boolean) as string[],
+        }
       : defaultValues,
   })
 
@@ -123,9 +121,7 @@ export default function ProductForm({
         <Input
           {...form.register('slug')}
           placeholder="Slug"
-          onBlur={() =>
-            form.setValue('slug', toSlug(form.getValues('name')))
-          }
+          onBlur={() => form.setValue('slug', toSlug(form.getValues('name')))}
         />
       </div>
 
@@ -141,18 +137,10 @@ export default function ProductForm({
 
       <div className="space-y-2">
         <Label>Images du produit</Label>
-
         <div className="flex gap-3 items-center flex-wrap">
           {images.map((img, index) => (
             <div key={`${img}-${index}`} className="relative">
-              <Image
-                src={img}
-                width={80}
-                height={80}
-                alt=""
-                className="rounded border"
-              />
-
+              <Image src={img} width={80} height={80} alt="" className="rounded border" />
               <RemoveButton
                 onClick={() => {
                   const next = images.filter((_, i) => i !== index)
@@ -174,10 +162,7 @@ export default function ProductForm({
                   if (!file) return
 
                   if (images.length >= 4) {
-                    toast({
-                      variant: 'destructive',
-                      description: 'Maximum 4 images par produit',
-                    })
+                    toast({ variant: 'destructive', description: 'Maximum 4 images par produit' })
                     return
                   }
 
@@ -189,20 +174,12 @@ export default function ProductForm({
                       method: 'POST',
                       body: formData,
                     })
-
                     const data = await res.json()
-
-                    if (!res.ok) {
-                      throw new Error(data.error || 'Upload failed')
-                    }
-
+                    if (!res.ok) throw new Error(data.error || 'Upload failed')
                     form.setValue('images', [...images, data.url])
                   } catch (err) {
                     console.error(err)
-                    toast({
-                      variant: 'destructive',
-                      description: "Échec de l'upload de l'image",
-                    })
+                    toast({ variant: 'destructive', description: "Échec de l'upload de l'image" })
                   } finally {
                     e.target.value = ''
                   }
@@ -227,8 +204,8 @@ export default function ProductForm({
             ? 'Création en cours...'
             : 'Mise à jour en cours...'
           : type === 'Créer'
-            ? 'Créer le produit'
-            : 'Mettre à jour le produit'}
+          ? 'Créer le produit'
+          : 'Mettre à jour le produit'}
       </Button>
     </form>
   )

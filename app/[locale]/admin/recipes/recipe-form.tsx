@@ -87,7 +87,7 @@ function ImagePicker({
   )
 }
 
-type RecipeFormInput = {
+interface RecipeFormInput {
   title: string
   slug: string
   short_description?: string
@@ -115,33 +115,40 @@ const defaultValues: RecipeFormInput = {
   category_id: '',
 }
 
+interface RecipeFormProps {
+  type: 'Créer' | 'Mettre à jour'
+  recipe?: Partial<RecipeFormInput> & {
+    id?: number
+    category_id?: number | string | null
+  }
+  recipeId?: number
+}
+
 export default function RecipeForm({
   type,
   recipe,
   recipeId,
-}: {
-  type: 'Créer' | 'Mettre à jour'
-  recipe?: any
-  recipeId?: number
-}) {
+}: RecipeFormProps) {
   const router = useRouter()
   const { toast } = useToast()
 
   const form = useForm<RecipeFormInput>({
     defaultValues: recipe
       ? {
-        title: recipe.title ?? '',
-        slug: recipe.slug ?? '',
-        short_description: recipe.short_description ?? '',
-        content: recipe.content ?? '',
-        category_id: recipe.category_id ? String(recipe.category_id) : '',
-        is_active: recipe.is_active ?? true,
-        image: recipe.image ?? '',
-        status: recipe.status ?? '',
-        paragraph_1: recipe.paragraph_1 ?? '',
-        paragraph_2: recipe.paragraph_2 ?? '',
-        image_url: recipe.image_url ?? '',
-      }
+          title: recipe.title ?? '',
+          slug: recipe.slug ?? '',
+          short_description: recipe.short_description ?? '',
+          content: recipe.content ?? '',
+          category_id: recipe.category_id
+            ? String(recipe.category_id)
+            : '',
+          is_active: recipe.is_active ?? true,
+          image: recipe.image ?? '',
+          status: recipe.status ?? '',
+          paragraph_1: recipe.paragraph_1 ?? '',
+          paragraph_2: recipe.paragraph_2 ?? '',
+          image_url: recipe.image_url ?? '',
+        }
       : defaultValues,
   })
 
@@ -159,7 +166,9 @@ export default function RecipeForm({
       paragraph_1: values.paragraph_1 || '',
       paragraph_2: values.paragraph_2 || '',
       is_active: values.is_active,
-      category_id: values.category_id ? Number(values.category_id) : undefined,
+      category_id: values.category_id
+        ? Number(values.category_id)
+        : undefined,
     }
 
     if (type === 'Créer') {
@@ -214,8 +223,6 @@ export default function RecipeForm({
         />
       </div>
 
-
-
       <div className="space-y-2">
         <Label>Image de miniature</Label>
         <ImagePicker
@@ -234,18 +241,26 @@ export default function RecipeForm({
 
       <div className="space-y-1">
         <Label>Paragraphe 1 de la recette</Label>
-        <Textarea {...form.register('paragraph_1')} placeholder="Paragraphe 1" />
+        <Textarea
+          {...form.register('paragraph_1')}
+          placeholder="Paragraphe 1"
+        />
       </div>
 
       <div className="space-y-1">
         <Label>Paragraphe 2 de la recette</Label>
-        <Textarea {...form.register('paragraph_2')} placeholder="Paragraphe 2" />
+        <Textarea
+          {...form.register('paragraph_2')}
+          placeholder="Paragraphe 2"
+        />
       </div>
 
       <div className="flex items-center gap-2">
         <Checkbox
           checked={form.watch('is_active')}
-          onCheckedChange={(v) => form.setValue('is_active', Boolean(v))}
+          onCheckedChange={(v) =>
+            form.setValue('is_active', Boolean(v))
+          }
         />
         <Label>Actif</Label>
       </div>
@@ -256,8 +271,8 @@ export default function RecipeForm({
             ? 'Création en cours...'
             : 'Mise à jour en cours...'
           : type === 'Créer'
-            ? 'Créer la recette'
-            : 'Mettre à jour la recette'}
+          ? 'Créer la recette'
+          : 'Mettre à jour la recette'}
       </Button>
     </form>
   )

@@ -8,15 +8,16 @@ export const metadata: Metadata = {
   title: 'Modifier la recette',
 }
 
-type UpdateRecipeProps = {
-  params: { 
-    id: string 
+interface UpdateRecipeProps {
+  params: {
+    id: string
   }
 }
 
 const UpdateRecipe = async ({ params }: UpdateRecipeProps) => {
   const { id } = params
   const recipe = await getRecipeById(Number(id)) // id en number pour Prisma
+
   if (!recipe) notFound()
 
   return (
@@ -28,7 +29,11 @@ const UpdateRecipe = async ({ params }: UpdateRecipeProps) => {
       </div>
 
       <div className="my-8">
-        <RecipeForm type="Mettre à jour" recipe={recipe} recipeId={recipe.id} />
+        <RecipeForm
+          type="Mettre à jour"
+          recipe={recipe}
+          recipeId={recipe.id}
+        />
       </div>
     </main>
   )

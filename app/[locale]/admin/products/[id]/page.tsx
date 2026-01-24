@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: 'Modifier le Produit',
 }
 
-type UpdateProductProps = {
+interface UpdateProductProps {
   params: {
     id: string
   }
@@ -17,6 +17,7 @@ type UpdateProductProps = {
 const UpdateProduct = async ({ params }: UpdateProductProps) => {
   const { id } = params
   const product = await getProductById(Number(id)) // id en number pour Prisma
+
   if (!product) notFound()
 
   return (
