@@ -74,7 +74,7 @@ export default function CredentialsSignInForm() {
         name: data.email.split('@')[0],
         role: 'ADMIN',
       })
-    } catch (err) {
+    } catch (_err) {
       toast({
         title: 'Erreur',
         description: 'Email ou mot de passe invalide',
@@ -94,7 +94,7 @@ export default function CredentialsSignInForm() {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="Entrer votre email d'accès" {...field} />
+                  <Input placeholder="Entrer votre email d&apos;accès" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -111,7 +111,7 @@ export default function CredentialsSignInForm() {
                   <div className="relative">
                     <Input
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="Entrer votre mot de passe d'accès"
+                      placeholder="Entrer votre mot de passe d&apos;accès"
                       {...field}
                     />
                     <button
@@ -133,7 +133,7 @@ export default function CredentialsSignInForm() {
           </Button>
 
           <p className='text-sm text-muted-foreground'>
-            Accédez au panel d'administration de {site.name} via vos identifiants internes.
+            Accédez au panel d&apos;administration de {site.name} via vos identifiants internes.
           </p>
         </div>
       </form>

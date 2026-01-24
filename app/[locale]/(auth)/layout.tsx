@@ -29,7 +29,7 @@ export default async function AuthLayout({
       <main className='mx-auto max-w-sm min-w-80 p-4'>{children}</main>
       <footer className=' flex-1 mt-8  bg-gray-800 w-full flex flex-col gap-4 items-center p-8 text-sm'>
         <div className='flex justify-center space-x-4'>
-          <Link href='/page/conditions-of-use'>Condition d'utilisation</Link>
+          <Link href='/page/conditions-of-use'>Condition d&apos;utilisation</Link>
           <Link href='/page/privacy-policy'> Politique de confidentialité</Link>
           <Link href='/page/privacy-policy'> Mentions Légales</Link>
         </div>
