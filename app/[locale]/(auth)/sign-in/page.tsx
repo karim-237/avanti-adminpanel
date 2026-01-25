@@ -11,28 +11,28 @@ export const metadata: Metadata = {
   title: 'Se connecter',
 }
 
-export default async function SignInPage(props: {
-  params: Promise<{ locale: string }>
-  searchParams: Promise<{ callbackUrl?: string }>
+export default async function SignInPage({
+  params,
+  searchParams,
+}: {
+  params: { locale: string }
+  searchParams: { callbackUrl?: string }
 }) {
-  const params = await props.params
-  const searchParams = await props.searchParams
-
   const callbackUrl = searchParams.callbackUrl ?? '/'
   const { site } = await getSetting()
 
   return (
-    <div className='w-full'>
+    <div className="w-full">
       <Card>
         <CardHeader>
-          <CardTitle className='text-2xl text-center'>Tableau de Bord</CardTitle>
+          <CardTitle className="text-2xl text-center">
+            Tableau de Bord
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <CredentialsSignInForm />
         </CardContent>
       </Card>
-
-     
     </div>
   )
 }
