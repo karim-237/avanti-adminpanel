@@ -72,7 +72,7 @@ export default function CarouselForm<T extends { carousels?: HomeBanner[] }>({
     ) : (
       <form
         id={id}
-        onSubmit={activeForm.handleSubmit(() => {})}
+        onSubmit={activeForm.handleSubmit(() => { })}
         className="space-y-4"
       >
         {children}
@@ -81,94 +81,99 @@ export default function CarouselForm<T extends { carousels?: HomeBanner[] }>({
 
   return (
     <Wrapper>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-hidden">
-        {fields.map((field, index) => (
-          <div
-            key={field.id}
-            className="border rounded p-4 relative flex flex-col space-y-2"
-          >
-            {/* Image */}
-            <div className="relative w-full h-48 bg-gray-100 rounded overflow-hidden">
-              {banners[index]?.image_path ? (
-                <>
-                  <Image
-                    src={banners[index].image_path}
-                    alt={`Banner ${index + 1}`}
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
-                  <RemoveImageButton
-                    onClick={() =>
-                      update(index, {
-                        ...banners[index],
-                        image_path: '',
-                      })
-                    }
-                  />
-                </>
-              ) : (
-                <label className="cursor-pointer flex items-center justify-center w-full h-full bg-gray-200 hover:bg-gray-300 rounded">
-                  Ajouter une image
-                  <input
-                    type="file"
-                    accept="image/*"
-                    hidden
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0]
-                      if (!file) return
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold">Bannières de la page d'accueil</h2>
 
-                      const formData = new FormData()
-                      formData.append('file', file)
-
-                      try {
-                        const res = await fetch('/api/upload/cloudinary', {
-                          method: 'POST',
-                          body: formData,
-                        })
-                        const data = await res.json()
-                        if (!res.ok)
-                          throw new Error(data.error || 'Upload failed')
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-hidden">
+          {fields.map((field, index) => (
+            <div
+              key={field.id}
+              className="border rounded p-4 relative flex flex-col space-y-2"
+            >
+              {/* Image */}
+              <div className="relative w-full h-48 bg-gray-100 rounded overflow-hidden">
+                {banners[index]?.image_path ? (
+                  <>
+                    <Image
+                      src={banners[index].image_path}
+                      alt={`Banner ${index + 1}`}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                    <RemoveImageButton
+                      onClick={() =>
                         update(index, {
                           ...banners[index],
-                          image_path: data.url,
+                          image_path: '',
                         })
-                      } catch (err) {
-                        console.error(err)
-                        toast({
-                          variant: 'destructive',
-                          description:
-                            "Échec de l'upload de l'image",
-                        })
-                      } finally {
-                        e.target.value = ''
                       }
-                    }}
-                  />
-                </label>
-              )}
-            </div>
+                    />
+                  </>
+                ) : (
+                  <label className="cursor-pointer flex items-center justify-center w-full h-full bg-gray-200 hover:bg-gray-300 rounded">
+                    Ajouter une image
+                    <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
 
-            {/* Inputs texte */}
-            <div className="flex flex-col space-y-2">
-              <Label>Titre</Label>
-              <Input
-                {...activeForm.register(`carousels.${index}.title`)}
-                placeholder="Titre"
-              />
+                        const formData = new FormData()
+                        formData.append('file', file)
 
-              <Label>Description</Label>
-              <Input
-                {...activeForm.register(
-                  `carousels.${index}.description`
+                        try {
+                          const res = await fetch('/api/upload/cloudinary', {
+                            method: 'POST',
+                            body: formData,
+                          })
+                          const data = await res.json()
+                          if (!res.ok)
+                            throw new Error(data.error || 'Upload failed')
+
+                          update(index, {
+                            ...banners[index],
+                            image_path: data.url,
+                          })
+                        } catch (err) {
+                          console.error(err)
+                          toast({
+                            variant: 'destructive',
+                            description:
+                              "Échec de l'upload de l'image",
+                          })
+                        } finally {
+                          e.target.value = ''
+                        }
+                      }}
+                    />
+                  </label>
                 )}
-                placeholder="Description"
-              />
+              </div>
+
+              {/* Inputs texte */}
+              <div className="flex flex-col space-y-2">
+                <Label>Titre</Label>
+                <Input
+                  {...activeForm.register(`carousels.${index}.title`)}
+                  placeholder="Titre"
+                />
+
+                <Label>Description</Label>
+                <Input
+                  {...activeForm.register(
+                    `carousels.${index}.description`
+                  )}
+                  placeholder="Description"
+                />
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
+
 
       {!form && (
         <Button
