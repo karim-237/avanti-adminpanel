@@ -1,8 +1,10 @@
 import { redirect } from 'next/navigation'
+import { routing } from '@/i18n/routing'
 
-export default function Page({ params }: { params: { locale: string } }) {
-  const { locale } = params
+export default function Page({ params }: { params: { locale?: string } }) {
+  const locale = routing.locales.includes(params?.locale as string)
+    ? params!.locale!
+    : routing.defaultLocale
 
-  // Redirige directement vers la page de connexion pour ce locale
   redirect(`/${locale}/sign-in`)
 }
