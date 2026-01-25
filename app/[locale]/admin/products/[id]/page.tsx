@@ -9,14 +9,21 @@ export const metadata: Metadata = {
 }
 
 interface UpdateProductProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+    locale: string
+  }>
 }
 
 const UpdateProduct = async ({ params }: UpdateProductProps) => {
-  const { id } = params
-  const product = await getProductById(Number(id)) // id en number pour Prisma
+  const { id } = await params // ✅ UNWRAP de la Promise
+
+  const numericId = Number(id)
+  if (Number.isNaN(numericId)) {
+    notFound()
+  }
+
+  const product = await getProductById(numericId)
 
   if (!product) notFound()
 
@@ -25,11 +32,17 @@ const UpdateProduct = async ({ params }: UpdateProductProps) => {
       <div className="flex mb-4">
         <Link href="/admin/products">Produits</Link>
         <span className="mx-1">›</span>
-        <Link href={`/admin/products/${product.id}`}>{product.name}</Link>
+        <Link href={`/admin/products/${product.id}`}>
+          {product.name}
+        </Link>
       </div>
 
       <div className="my-8">
-        <ProductForm type="Mettre à jour" product={product} productId={product.id} />
+        <ProductForm
+          type="Mettre à jour"
+          product={product}
+          productId={product.id}
+        />
       </div>
     </main>
   )

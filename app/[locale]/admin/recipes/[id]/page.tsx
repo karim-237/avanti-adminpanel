@@ -9,15 +9,21 @@ export const metadata: Metadata = {
 }
 
 interface UpdateRecipeProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+    locale: string
+  }>
 }
 
 const UpdateRecipe = async ({ params }: UpdateRecipeProps) => {
-  const { id } = params
-  const recipe = await getRecipeById(Number(id)) // id en number pour Prisma
+  const { id } = await params // ✅ unwrap de la Promise
 
+  const numericId = Number(id)
+  if (Number.isNaN(numericId)) {
+    notFound()
+  }
+
+  const recipe = await getRecipeById(numericId)
   if (!recipe) notFound()
 
   return (

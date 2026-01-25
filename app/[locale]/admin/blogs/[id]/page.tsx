@@ -9,14 +9,21 @@ export const metadata: Metadata = {
 }
 
 type UpdateBlogProps = {
-  params: {
-    id: string 
-  }
+  params: Promise<{
+    id: string
+    locale: string
+  }>
 }
 
 const UpdateBlog = async ({ params }: UpdateBlogProps) => {
-  const { id } = params
-  const blog = await getBlogById(Number(id)) // id en number pour Prisma
+  const { id } = await params // ✅ unwrap de la Promise
+
+  const numericId = Number(id)
+  if (Number.isNaN(numericId)) {
+    notFound()
+  }
+
+  const blog = await getBlogById(numericId)
   if (!blog) notFound()
 
   return (
