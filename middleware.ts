@@ -6,12 +6,8 @@ import authConfig from './auth.config'
 
 const publicPages = [
   '/',
-  '/fr',
-  '/en',
-  '/es',
-  '/sign-in',
-  '/(fr|en|es)/sign-in',
   '/search',
+  '/sign-in',
   '/sign-up',
   '/cart',
   '/cart/(.*)',
@@ -24,7 +20,9 @@ const { auth } = NextAuth(authConfig)
 
 export default auth((req) => {
   const publicPathnameRegex = RegExp(
-    `^(/(${routing.locales.join('|')}))?(/sign-in|/sign-up|/search|/cart.*|/product.*|/page.*)?/?$`,
+    `^(/(${routing.locales.join('|')}))?(${publicPages
+      .flatMap((p) => (p === '/' ? ['', '/'] : p))
+      .join('|')})/?$`,
     'i'
   )
 
@@ -34,29 +32,21 @@ export default auth((req) => {
     return intlMiddleware(req)
   }
 
-  if (!req.auth) {
-    const pathname = req.nextUrl.pathname
-    const firstSegment = pathname.split('/')[1]
+ if (!req.auth) {
+  // Récupérer la locale depuis l'URL ou utiliser la valeur par défaut
+  const locale = req.nextUrl.pathname.split('/')[1] || routing.defaultLocale;
+  
+  const newUrl = new URL(
+    `/${locale}/sign-in?callbackUrl=${encodeURIComponent(req.nextUrl.pathname)}`,
+    req.nextUrl.origin
+  )
+  return Response.redirect(newUrl)
+}
 
-    const locale = routing.locales.includes(firstSegment)
-      ? firstSegment
-      : routing.defaultLocale
-
-    const newUrl = new URL(
-      `/${locale}/sign-in?callbackUrl=${encodeURIComponent(pathname)}`,
-      req.nextUrl.origin
-    )
-
-    return Response.redirect(newUrl)
-  }
 
   return intlMiddleware(req)
 })
 
 export const config = {
-  matcher: [
-    '/',
-    '/(fr|en|es)/:path*',
-    '/((?!api|_next|_vercel|.*\\..*).*)',
-  ],
+  matcher: ['/((?!api|_next|.*\\..*).*)'],
 }

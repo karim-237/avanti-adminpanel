@@ -8,7 +8,7 @@ import { routing } from '@/i18n/routing'
 import { notFound } from 'next/navigation'
 import { getSetting } from '@/lib/actions/setting.actions'
 import { cookies } from 'next/headers'
-import { SessionProvider } from 'next-auth/react' // ✅ Import SessionProvider
+import { SessionProvider } from 'next-auth/react'
 import SessionSync from '@/components/shared/session-sync'
 
 const geistSans = Geist({
@@ -25,12 +25,13 @@ export async function generateMetadata() {
   const {
     site: { slogan, name, description, url, favicon },
   } = await getSetting()
+
   return {
     title: {
       template: `%s | ${name}`,
       default: `${name} | PANEL`,
     },
-    description: description,
+    description,
     metadataBase: new URL(url),
     icons: {
       icon: favicon,
@@ -44,19 +45,20 @@ export default async function AppLayout({
   params,
   children,
 }: {
-  params: { locale: string }
+  params: Promise<{ locale: string }>
   children: React.ReactNode
 }) {
+  const { locale } = await params   // ✅ UNWRAP DE LA PROMISE
+
   const setting = await getSetting()
   const currencyCookie = (await cookies()).get('currency')
   const currency = currencyCookie ? currencyCookie.value : 'USD'
 
-  const { locale } = params
-  // Ensure that the incoming `locale` is valid
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // ✅ Sécurise la locale
   if (!routing.locales.includes(locale as any)) {
     notFound()
   }
+
   const messages = await getMessages()
 
   return (
@@ -70,14 +72,12 @@ export default async function AppLayout({
         suppressHydrationWarning
       >
         <NextIntlClientProvider locale={locale} messages={messages}>
-          {/* ✅ SessionProvider autour de toute l'app */}
           <SessionProvider>
             <SessionSync>
               <ClientProviders setting={{ ...setting, currency }}>
                 {children}
               </ClientProviders>
             </SessionSync>
-
           </SessionProvider>
         </NextIntlClientProvider>
       </body>
