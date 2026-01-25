@@ -24,9 +24,7 @@ const { auth } = NextAuth(authConfig)
 
 export default auth((req) => {
   const publicPathnameRegex = RegExp(
-    `^(/(${routing.locales.join('|')}))?(${publicPages
-      .flatMap((p) => (p === '/' ? ['', '/'] : p))
-      .join('|')})/?$`,
+    `^(/(${routing.locales.join('|')}))?(/sign-in|/sign-up|/search|/cart.*|/product.*|/page.*)?/?$`,
     'i'
   )
 
