@@ -8,16 +8,23 @@ export const metadata: Metadata = {
 }
 
 type NewsletterDetailProps = {
-  params: {
+  params: Promise<{
     id: string
-  }
+    locale: string
+  }>
 }
 
 const NewsletterDetail = async ({ params }: NewsletterDetailProps) => {
-  const { id } = params
+  const { id } = await params // ✅ unwrap de la Promise
+
+  const numericId = Number(id)
+  if (Number.isNaN(numericId)) {
+    notFound()
+  }
+
   // Récupérer l'email par id
   const data = await getAllNewsletterEmails({ page: 1, limit: 1 })
-  const email = data.emails.find((e: { id: number }) => e.id === Number(id))
+  const email = data.emails.find((e: { id: number }) => e.id === numericId)
 
   if (!email) notFound()
 
