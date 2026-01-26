@@ -92,6 +92,8 @@ function ImagePicker({
 type BlogFormInput = {
   title: string
   slug: string
+  category_id?: number
+  tag_ids?: number[]
   category?: string
   short_description: string
   full_content?: string
@@ -141,10 +143,14 @@ export default function BlogForm({
   type,
   blog,
   blogId,
+  categories,
+  tags,
 }: {
   type: 'Créer' | 'Mettre à jour'
   blog?: any
   blogId?: number
+  categories: { id: number; name: string }[]
+  tags: { id: number; name: string }[]
 }) {
   const router = useRouter()
   const { toast } = useToast()
@@ -225,8 +231,40 @@ export default function BlogForm({
 
       <div className="space-y-1">
         <Label>Catégorie</Label>
-        <Input {...form.register('category')} placeholder="Catégorie" />
+        <select
+          {...form.register('category_id', { valueAsNumber: true })}
+          className="w-full border rounded px-3 py-2 text-sm"
+        >
+          <option value="">-- Choisir une catégorie --</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
       </div>
+
+
+      <div className="space-y-1">
+        <Label>Tags</Label>
+        <select
+          multiple
+          className="w-full border rounded px-3 py-2 text-sm"
+          onChange={(e) => {
+            const values = Array.from(e.target.selectedOptions).map((o) =>
+              Number(o.value)
+            )
+            form.setValue('tag_ids', values)
+          }}
+        >
+          {tags.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
 
       <div className="space-y-1">
         <Label>Description courte</Label>

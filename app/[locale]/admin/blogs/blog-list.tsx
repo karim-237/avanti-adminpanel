@@ -68,10 +68,10 @@ const BlogList = () => {
     setInputValue(value)
 
     clearTimeout((window as any).debounce)
-    ;(window as any).debounce = setTimeout(() => {
-      setPage(1)
-      loadData({ page: 1, query: value })
-    }, 500)
+      ; (window as any).debounce = setTimeout(() => {
+        setPage(1)
+        loadData({ page: 1, query: value })
+      }, 500)
   }
 
   useEffect(() => {
@@ -103,9 +103,26 @@ const BlogList = () => {
           )}
         </div>
 
-        <Button asChild>
-          <Link href='/admin/blogs/create'>Ajouter un blog</Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline">
+            <Link href="/admin/blogs/categories">
+              Liste des catégories
+            </Link>
+          </Button>
+
+          <Button asChild variant="outline">
+            <Link href="/admin/blogs/tags">
+              Liste des tags
+            </Link>
+          </Button>
+
+          <Button asChild>
+            <Link href="/admin/blogs/create">
+              Ajouter un blog
+            </Link>
+          </Button>
+        </div>
+
       </div>
 
       {/* Table */}

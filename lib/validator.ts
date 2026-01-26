@@ -291,6 +291,8 @@ export const BlogInputSchema = z.object({
   slug: z.string().optional(),
   short_description: z.string().min(3, 'Short must be at least 3 characters'),
   category: z.string(),
+  category_id: z.number().optional().nullable(),
+  tag_ids: z.array(z.number()).optional(),
   image_url: z.string(),
   status: z.string(),
   featured: z.boolean(),

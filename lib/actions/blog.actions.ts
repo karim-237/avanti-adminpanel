@@ -34,13 +34,22 @@ export async function createBlog(input: unknown) {
     const createdBlog = await prisma.blogs.create({
       data: {
         title: blog.title,
-        slug, // ✅ slug garanti
+        slug,
         short_description: blog.short_description,
-        category,
         image_url: blog.image_url,
         single_image_xl: blog.single_image_xl,
         status,
         featured: blog.featured ?? false,
+        category_id: blog.category_id ?? null,
+        blog_tags: blog.tag_ids?.length
+          ? {
+            createMany: {
+              data: blog.tag_ids.map((id: number) => ({
+                tag_id: id,
+              })),
+            },
+          }
+          : undefined,
       },
     })
 
@@ -158,7 +167,7 @@ export async function getAllBlogsForAdmin({
   page?: number
   limit?: number
 }) {
-  
+
   const take = limit || 10
   const skip = (page - 1) * take
 
@@ -188,13 +197,16 @@ export async function getAllBlogsForAdmin({
 /* =======================
    GET ALL CATEGORIES
 ======================= */
-export async function getAllBlogCategories(): Promise<string[]> {
-  const categories = await prisma.blog_categories.findMany({
-    select: { name: true },
+export async function getAllBlogCategories(): Promise<
+  { id: number; name: string }[]
+> {
+  return prisma.blog_categories.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
     orderBy: { name: 'asc' },
   })
-
-  return categories.map((c: { name: any }) => c.name)
 }
 
 
@@ -204,4 +216,122 @@ export async function getAllBlogCategories(): Promise<string[]> {
 
 export async function countBlogs(): Promise<number> {
   return prisma.blogs.count()
+}
+
+
+/* =======================
+   CREATE CATEGORY
+======================= */
+export async function createBlogCategory(input: {
+  name: string
+  slug?: string
+}) {
+  try {
+    const slug =
+      input.slug && input.slug.trim() !== ''
+        ? input.slug
+        : toSlug(input.name)
+
+    const category = await prisma.blog_categories.create({
+      data: { name: input.name, slug },
+    })
+
+    revalidatePath('/admin/blog')
+
+    return { success: true, message: 'Catégorie créée', data: category }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+/* =======================
+   CREATE TAG
+======================= */
+export async function createBlogTag(input: {
+  name: string
+  slug?: string
+}) {
+  try {
+    const slug =
+      input.slug && input.slug.trim() !== ''
+        ? input.slug
+        : toSlug(input.name)
+
+    const tag = await prisma.tags.create({
+      data: { name: input.name, slug },
+    })
+
+    revalidatePath('/admin/blog')
+
+    return { success: true, message: 'Tag créé', data: tag }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+/* =======================
+   GET ALL TAGS
+======================= */
+export async function getAllBlogTags(): Promise<
+  { id: number; name: string }[]
+> {
+  return prisma.tags.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
+    orderBy: { name: 'asc' },
+  })
+}
+
+/* =======================
+   GET ALL CATEGORIES (ADMIN)
+======================= */
+export async function getAllBlogCategoriesAdmin() {
+  return prisma.blog_categories.findMany({
+    orderBy: { name: 'asc' },
+  })
+}
+
+/* =======================
+   DELETE CATEGORY
+======================= */
+export async function deleteBlogCategory(id: number) {
+  try {
+    await prisma.blog_categories.delete({
+      where: { id },
+    })
+
+    revalidatePath('/admin/blogs/categories')
+
+    return { success: true, message: 'Catégorie supprimée' }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+/* =======================
+   GET ALL TAGS (ADMIN)
+======================= */
+export async function getAllBlogTagsAdmin() {
+  return prisma.tags.findMany({
+    orderBy: { name: 'asc' },
+  })
+}
+
+/* =======================
+   DELETE TAG
+======================= */
+export async function deleteBlogTag(id: number) {
+  try {
+    await prisma.tags.delete({
+      where: { id },
+    })
+
+    revalidatePath('/admin/blogs/tags')
+
+    return { success: true, message: 'Tag supprimé' }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
 }
