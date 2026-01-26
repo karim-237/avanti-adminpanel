@@ -245,11 +245,26 @@ export default function BlogForm({
       </div>
 
 
-      <div className="space-y-1">
+      <div className="space-y-2">
         <Label>Tags</Label>
+
         <select
           multiple
-          className="w-full border rounded px-3 py-2 text-sm"
+          className="
+      w-full
+      min-h-[120px]
+      border
+      rounded-md
+      px-3
+      py-2
+      text-sm
+      bg-background
+      focus:outline-none
+      focus:ring-2
+      focus:ring-primary
+      focus:border-primary
+    "
+         value={(form.watch('tag_ids') ?? []).map(String)}
           onChange={(e) => {
             const values = Array.from(e.target.selectedOptions).map((o) =>
               Number(o.value)
@@ -258,12 +273,56 @@ export default function BlogForm({
           }}
         >
           {tags.map((t) => (
-            <option key={t.id} value={t.id}>
+            <option key={t.id} value={t.id} className="py-1">
               {t.name}
             </option>
           ))}
         </select>
+
+        {/* Chips des tags sélectionnés */}
+        {form.watch('tag_ids')?.length ? (
+          <div className="flex flex-wrap gap-2">
+            {tags
+              .filter((t) => form.watch('tag_ids')?.includes(t.id))
+              .map((t) => (
+                <span
+                  key={t.id}
+                  className="
+              inline-flex
+              items-center
+              rounded-full
+              bg-primary/10
+              text-primary
+              px-3
+              py-1
+              text-xs
+              font-medium
+            "
+                >
+                  {t.name}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const current = form.getValues('tag_ids') ?? []
+                      form.setValue(
+                        'tag_ids',
+                        current.filter((id) => id !== t.id)
+                      )
+                    }}
+                    className="ml-2 text-primary/60 hover:text-primary"
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Astuce : maintiens Ctrl (Windows) ou Cmd (Mac) pour sélectionner plusieurs tags
+          </p>
+        )}
       </div>
+
 
 
       <div className="space-y-1">
