@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { getBlogById } from '@/lib/actions/blog.actions'
+import { getBlogById, getAllBlogCategories, getAllBlogTags } from '@/lib/actions/blog.actions'
 import Link from 'next/link'
 import BlogForm from '../blog-form'
 import { Metadata } from 'next'
@@ -25,6 +25,8 @@ const UpdateBlog = async ({ params }: UpdateBlogProps) => {
 
   const blog = await getBlogById(numericId)
   if (!blog) notFound()
+  const categories = await getAllBlogCategories()
+  const tags = await getAllBlogTags()
 
   return (
     <main className="max-w-6xl mx-auto p-4">
@@ -35,7 +37,13 @@ const UpdateBlog = async ({ params }: UpdateBlogProps) => {
       </div>
 
       <div className="my-8">
-        <BlogForm type="Mettre à jour" blog={blog} blogId={blog.id} />
+        <BlogForm
+          type="Mettre à jour"
+          blog={blog}
+          blogId={blog.id}
+          categories={categories}
+          tags={tags}
+        />
       </div>
     </main>
   )
