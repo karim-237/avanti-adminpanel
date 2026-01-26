@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useEffect, useState, useTransition } from 'react'
-import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -12,10 +11,9 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import DeleteDialog from '@/components/shared/delete-dialog'
-import {
-  deleteBlogTag,
-  getAllBlogTagsAdmin,
-} from '@/lib/actions/blog.actions'
+import { deleteBlogTag, getAllBlogTagsAdmin } from '@/lib/actions/blog.actions'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
 
 type Tag = {
   id: number
@@ -26,6 +24,8 @@ type Tag = {
 const TagList = () => {
   const [data, setData] = useState<Tag[]>([])
   const [isPending, startTransition] = useTransition()
+  const params = useParams()
+  const locale = params.locale // récupère le locale actuel
 
   const loadData = () => {
     startTransition(async () => {
@@ -46,15 +46,11 @@ const TagList = () => {
 
         <div className="flex items-center gap-2">
           <Button asChild>
-            <Link href="/admin/blogs/tags/create">
-              Ajouter un tag
-            </Link>
+            <Link href={`/${locale}/admin/blogs/tags/create`}>Ajouter un tag</Link>
           </Button>
 
           <Button asChild variant="outline">
-            <Link href="/admin/blogs">
-              ← Retour aux blogs
-            </Link>
+            <Link href={`/${locale}/admin/blogs`}>← Retour aux blogs</Link>
           </Button>
         </div>
       </div>
@@ -66,7 +62,7 @@ const TagList = () => {
             <TableHead>ID</TableHead>
             <TableHead>Nom</TableHead>
             <TableHead>Slug</TableHead>
-            <TableHead className="w-[140px]">Actions</TableHead>
+            <TableHead className="w-[180px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -77,7 +73,12 @@ const TagList = () => {
               <TableCell>{tag.name}</TableCell>
               <TableCell>{tag.slug}</TableCell>
               <TableCell className="flex gap-1">
-                {/* plus tard : modifier */}
+                {/* Bouton Modifier */}
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/${locale}/admin/blogs/tags/${tag.id}`}>Modifier</Link>
+                </Button>
+
+                {/* Bouton Supprimer */}
                 <DeleteDialog
                   id={String(tag.id)}
                   action={async (idStr: string) =>

@@ -146,7 +146,7 @@ export default function BlogForm({
   blogId,
   categories,
   tags,
-}: {
+}: { 
   type: 'Créer' | 'Mettre à jour'
   blog?: any
   blogId?: number

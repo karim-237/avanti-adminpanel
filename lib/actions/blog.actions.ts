@@ -270,11 +270,22 @@ export async function countBlogs(): Promise<number> {
 ======================= */
 export async function deleteBlogCategory(id: number) {
   try {
+    // Détacher la catégorie des blogs qui l'utilisent
+    await prisma.blogs.updateMany({
+      where: { category_id: id },
+      data: { category_id: null },
+    })
+
+    // Supprimer la catégorie
     await prisma.blog_categories.delete({ where: { id } })
+
+    // Revalidate
     revalidatePath('/admin/blogs/categories')
+
     return { success: true, message: 'Catégorie supprimée' }
-  } catch (error) {
-    return { success: false, message: formatError(error) }
+  } catch (error: any) {
+    console.error(error)
+    return { success: false, message: error.message }
   }
 }
 
@@ -297,10 +308,174 @@ export async function getAllBlogTagsAdmin() {
 ======================= */
 export async function deleteBlogTag(id: number) {
   try {
-    await prisma.tags.delete({ where: { id } })
-    revalidatePath('/admin/blogs/tags')
-    return { success: true, message: 'Tag supprimé' }
+    // Supprimer tous les liens avec ce tag
+    await prisma.blog_tags.deleteMany({
+      where: { tag_id: id },
+    })
+
+    // Supprimer le tag
+    await prisma.tags.delete({
+      where: { id },
+    })
+
+    return { success: true, message: 'Tag supprimé avec succès' }
+  } catch (error: any) {
+    console.error(error)
+    return { success: false, message: error.message }
+  }
+}
+
+
+/* =======================
+   GET TAG BY ID (CORRIGÉ)
+======================= */
+export async function getBlogTagById(id: number) {
+  try {
+    // On utilise Prisma directement au lieu de fetch
+    const tag = await prisma.tags.findUnique({
+      where: { 
+        id: id 
+      }
+    })
+
+    if (!tag) {
+      console.error(`Tag avec l'ID ${id} non trouvé dans la base de données.`);
+      return null
+    }
+
+    return tag
   } catch (error) {
-    return { success: false, message: formatError(error) }
+    console.error("Erreur lors de la récupération du tag:", error)
+    return null
+  }
+}
+
+/* =======================
+   UPDATE TAG (CORRIGÉ)
+======================= */
+export async function updateBlogTag({ id, name, slug }: { id: number; name: string; slug: string }) {
+  try {
+    // Utilisation de Prisma pour mettre à jour directement en base de données
+    const updatedTag = await prisma.tags.update({
+      where: { id },
+      data: {
+        name,
+        slug: slug.trim() || toSlug(name), // On s'assure d'avoir un slug propre
+      },
+    })
+
+    // On revalide le cache pour que les changements soient visibles sur l'admin
+    revalidatePath('/admin/blogs/tags')
+
+    return { 
+      success: true, 
+      message: 'Tag mis à jour avec succès', 
+      data: updatedTag 
+    }
+  } catch (error) {
+    console.error("Erreur Prisma lors de la mise à jour du tag:", error)
+    return { 
+      success: false, 
+      message: formatError(error) // Utilise votre utilitaire formatError existant
+    }
+  }
+}
+
+
+
+
+/* =======================
+   UPDATE CATEGORIE (CORRIGÉ)
+======================= */
+
+type UpdateBlogCategoryPayload = {
+  id: number
+  name: string
+  slug: string
+}
+
+export async function updateBlogCategory(payload: UpdateBlogCategoryPayload) {
+  try {
+    const { id, name, slug } = payload
+
+    // 1️⃣ Vérifier que la catégorie existe
+    const existingCategory = await prisma.blog_categories.findUnique({
+      where: { id },
+    })
+
+    if (!existingCategory) {
+      return {
+        success: false,
+        message: 'Catégorie introuvable',
+      }
+    }
+
+    // 2️⃣ Vérifier l’unicité du slug (hors catégorie courante)
+    const slugExists = await prisma.blog_categories.findFirst({
+      where: {
+        slug,
+        NOT: { id },
+      },
+    })
+
+    if (slugExists) {
+      return {
+        success: false,
+        message: 'Une autre catégorie utilise déjà ce slug',
+      }
+    }
+
+    // 3️⃣ Mise à jour
+    const updatedCategory = await prisma.blog_categories.update({
+      where: { id },
+      data: {
+        name,
+        slug,
+        updated_at: new Date(), // optionnel mais propre
+      },
+    })
+
+    return {
+      success: true,
+      message: 'Catégorie mise à jour avec succès',
+      data: updatedCategory,
+    }
+  } catch (error) {
+    console.error('updateBlogCategory error:', error)
+
+    return {
+      success: false,
+      message: 'Erreur lors de la mise à jour de la catégorie',
+    }
+  }
+}
+
+
+/* ===========================
+   GET CATEGORY BY ID (CORRIGÉ)
+=========================== */
+export async function getBlogCategoryById(id: number) {
+  try {
+    // On utilise Prisma directement au lieu de fetch
+    const category = await prisma.blog_categories.findUnique({
+      where: {
+        id: id,
+      },
+    })
+
+    if (!category) {
+      console.error(
+        `Catégorie avec l'ID ${id} non trouvée dans la base de données.`
+      )
+      return null
+    }
+
+    return category
+  } catch (error) {
+    console.error(
+      'Erreur lors de la récupération de la catégorie:',
+      error
+    )
+    return null
   }
 }

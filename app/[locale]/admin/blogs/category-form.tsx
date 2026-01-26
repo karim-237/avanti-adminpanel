@@ -5,7 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { createBlogCategory } from '@/lib/actions/blog.actions'
+import {
+  createBlogCategory,
+  updateBlogCategory,
+} from '@/lib/actions/blog.actions'
 import { toSlug } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 
@@ -14,16 +17,45 @@ type CategoryFormInput = {
   slug: string
 }
 
-export default function CategoryForm() {
+export default function CategoryForm({
+  type,
+  category,
+  categoryId,
+}: {
+  type: 'Créer' | 'Mettre à jour'
+  category?: { name: string; slug: string }
+  categoryId?: number
+}) {
   const { toast } = useToast()
   const router = useRouter()
 
+  // ✅ Source de vérité réelle
+  const isCreateMode = !categoryId
+
   const form = useForm<CategoryFormInput>({
-    defaultValues: { name: '', slug: '' },
+    defaultValues: category
+      ? { name: category.name, slug: category.slug }
+      : { name: '', slug: '' },
   })
 
   async function onSubmit(values: CategoryFormInput) {
-    const res = await createBlogCategory(values)
+    let res
+
+    if (isCreateMode) {
+      // create
+      res = await createBlogCategory(values)
+    } else {
+      if (!categoryId) {
+        toast({ variant: 'destructive', description: 'Category ID manquant' })
+        return
+      }
+
+      // update
+      res = await updateBlogCategory({
+        id: categoryId,
+        ...values,
+      })
+    }
 
     if (!res?.success) {
       toast({ variant: 'destructive', description: res?.message })
@@ -31,8 +63,7 @@ export default function CategoryForm() {
     }
 
     toast({ description: res.message })
-    router.refresh()
-    form.reset()
+    router.push(`/admin/blogs/categories`)
   }
 
   return (
@@ -52,12 +83,16 @@ export default function CategoryForm() {
         />
       </div>
 
-      {/* Boutons */}
       <div className="flex gap-2">
         <Button type="submit" disabled={form.formState.isSubmitting}>
-          Créer la catégorie
+          {form.formState.isSubmitting
+            ? isCreateMode
+              ? 'Création en cours...'
+              : 'Mise à jour en cours...'
+            : isCreateMode
+            ? 'Créer la catégorie'
+            : 'Mettre à jour la catégorie'}
         </Button>
-
 
         <Button
           type="button"
@@ -67,7 +102,6 @@ export default function CategoryForm() {
           Annuler
         </Button>
       </div>
-
     </form>
   )
 }
