@@ -120,6 +120,7 @@ const defaultValues: BlogFormInput = {
   title: '',
   slug: '',
   category: '',
+  tag_ids: [],
   short_description: '',
   full_content: '',
 
@@ -158,27 +159,28 @@ export default function BlogForm({
   const form = useForm<BlogFormInput>({
     defaultValues: blog
       ? {
-        title: blog.title ?? '',
-        slug: blog.slug ?? '',
-        category: blog.category ?? 'All',
-        short_description: blog.short_description ?? '',
-        full_content: blog.full_content ?? '',
+          title: blog.title ?? '',
+          slug: blog.slug ?? '',
+          category_id: blog.category_id ?? undefined, // ✅ pré-remplit la catégorie
+          tag_ids: blog.blogs_post_tags?.map((bt: any) => bt.tag_id) ?? [], // ✅ pré-remplit les tags
+          short_description: blog.short_description ?? '',
+          full_content: blog.full_content ?? '',
 
-        featured: blog.featured ?? false,
-        status: blog.status ?? 'published',
+          featured: blog.featured ?? false,
+          status: blog.status ?? 'published',
 
-        image_url: blog.image_url ?? '',
+          image_url: blog.image_url ?? '',
 
-        paragraph_1: blog.paragraph_1 ?? '',
-        paragraph_2: blog.paragraph_2 ?? '',
-        author_bio: blog.author_bio ?? 'Nous vous tenons informés grâce à nos articles.',
+          paragraph_1: blog.paragraph_1 ?? '',
+          paragraph_2: blog.paragraph_2 ?? '',
+          author_bio: blog.author_bio ?? 'Nous vous tenons informés grâce à nos articles.',
 
-        single_image: blog.single_image ?? '',
-        single_image_xl: blog.single_image_xl ?? '',
-        image_secondary: blog.image_secondary ?? '',
+          single_image: blog.single_image ?? '',
+          single_image_xl: blog.single_image_xl ?? '',
+          image_secondary: blog.image_secondary ?? '',
 
-        quote: blog.quote ?? '',
-      }
+          quote: blog.quote ?? '',
+        }
       : defaultValues,
   })
 
@@ -244,7 +246,6 @@ export default function BlogForm({
         </select>
       </div>
 
-
       <div className="space-y-2">
         <Label>Tags</Label>
 
@@ -264,7 +265,7 @@ export default function BlogForm({
       focus:ring-primary
       focus:border-primary
     "
-         value={(form.watch('tag_ids') ?? []).map(String)}
+          value={(form.watch('tag_ids') ?? []).map(String)}
           onChange={(e) => {
             const values = Array.from(e.target.selectedOptions).map((o) =>
               Number(o.value)
@@ -323,8 +324,6 @@ export default function BlogForm({
         )}
       </div>
 
-
-
       <div className="space-y-1">
         <Label>Description courte</Label>
         <Textarea
@@ -361,10 +360,10 @@ export default function BlogForm({
         <Textarea {...form.register('quote')} placeholder="Citation" />
       </div>
 
-
       <div className="space-y-2">
         <Label>Image large</Label>
         <ImagePicker
+        
           value={form.watch('single_image_xl')}
           onChange={(url) => form.setValue('single_image_xl', url)}
         />
@@ -392,8 +391,8 @@ export default function BlogForm({
             ? 'Création en cours...'
             : 'Mise à jour en cours...'
           : type === 'Créer'
-            ? 'Créer le blog'
-            : 'Mettre à jour le blog'}
+          ? 'Créer le blog'
+          : 'Mettre à jour le blog'}
       </Button>
     </form>
   )

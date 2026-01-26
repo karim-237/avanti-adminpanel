@@ -24,6 +24,7 @@ import {
 
 /** ✅ Type aligné BLOG */
 type Blog = {
+  tags: any
   id: number
   title: string
   slug?: string | null
@@ -132,6 +133,7 @@ const BlogList = () => {
             <TableHead>ID</TableHead>
             <TableHead>Titre</TableHead>
             <TableHead>Catégorie</TableHead>
+            <TableHead>Tags</TableHead>
             <TableHead>Statut</TableHead>
             <TableHead>Featured</TableHead>
             <TableHead className='w-[140px]'>Actions</TableHead>
@@ -152,7 +154,8 @@ const BlogList = () => {
                 </Link>
               </TableCell>
 
-              <TableCell>{blog.category ?? '-'}</TableCell>
+              <TableCell>{(blog as any).categoryName ?? '-'}</TableCell>
+              <TableCell>{blog.tags.join(', ') || '-'}</TableCell>
 
               <TableCell>{blog.status ?? '-'}</TableCell>
 

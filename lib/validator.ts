@@ -295,9 +295,14 @@ export const BlogInputSchema = z.object({
   tag_ids: z.array(z.number()).optional(),
   image_url: z.string(),
   status: z.string(),
+  full_content: z.string(),
+  paragraph_1: z.string(),
+  paragraph_2: z.string(),
+  author_bio: z.string(),
   featured: z.boolean(),
   single_image_xl: z.string(),
   isPublished: z.boolean().default(false),
+
 })
 
 export const BlogUpdateSchema = BlogInputSchema.extend({
