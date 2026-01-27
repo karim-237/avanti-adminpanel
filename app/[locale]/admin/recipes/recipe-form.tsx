@@ -12,13 +12,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createRecipe, updateRecipe } from '@/lib/actions/recipe.actions'
 
-function ImagePicker({
-  value,
-  onChange,
-}: {
-  value: string
-  onChange: (url: string) => void
-}) {
+function ImagePicker({ value, onChange }: { value: string; onChange: (url: string) => void }) {
   const { toast } = useToast()
 
   return (
@@ -35,7 +29,6 @@ function ImagePicker({
           </button>
         </div>
       )}
-
       {!value && (
         <label className="cursor-pointer border rounded px-3 py-2 text-sm bg-muted hover:bg-muted/70">
           Ajouter une image
@@ -46,24 +39,16 @@ function ImagePicker({
             onChange={async (e) => {
               const file = e.target.files?.[0]
               if (!file) return
-
               const formData = new FormData()
               formData.append('file', file)
-
               try {
-                const res = await fetch('/api/upload/cloudinary', {
-                  method: 'POST',
-                  body: formData,
-                })
+                const res = await fetch('/api/upload/cloudinary', { method: 'POST', body: formData })
                 const data = await res.json()
                 if (!res.ok) throw new Error(data.error || 'Upload failed')
                 onChange(data.url)
               } catch (err) {
                 console.error(err)
-                toast({
-                  variant: 'destructive',
-                  description: "Échec de l'upload de l'image",
-                })
+                toast({ variant: 'destructive', description: "Échec de l'upload de l'image" })
               } finally {
                 e.target.value = ''
               }
@@ -109,72 +94,35 @@ interface RecipeFormProps {
   type: 'Créer' | 'Mettre à jour'
   categories: { id: number; name: string }[]
   tags: { id: number; name: string }[]
-  recipe?: Partial<RecipeFormInput> & {
-    id?: number
-    category_id?: number | null
-    tag_ids?: number[] | { id: number }[]
-  }
+  recipe?: Partial<RecipeFormInput> & { id?: number; category_id?: number | null; tag_ids?: number[] | { id: number }[] }
   recipeId?: number
 }
 
-export default function RecipeForm({
-  type,
-  recipe,
-  recipeId,
-  categories,
-  tags,
-}: RecipeFormProps) {
+export default function RecipeForm({ type, recipe, recipeId, categories, tags }: RecipeFormProps) {
   const router = useRouter()
   const { toast } = useToast()
 
-  // Convert tag_ids to number array if it's array of objects
-  const initialTagIds =
-    recipe?.tag_ids?.map((t: any) => (typeof t === 'number' ? t : t.id)) ?? []
+  // Convert tag_ids en array de nombres si ce sont des objets
+  const initialTagIds = recipe?.tag_ids?.map((t: any) => (typeof t === 'number' ? t : t.id)) ?? []
 
   const form = useForm<RecipeFormInput>({
     defaultValues: recipe
-      ? {
-          title: recipe.title ?? '',
-          slug: recipe.slug ?? '',
-          short_description: recipe.short_description ?? '',
-          content: recipe.content ?? '',
-          category_id: recipe.category_id ?? undefined, // ✅ pré-remplit la catégorie
-          is_active: recipe.is_active ?? true,
-          image: recipe.image ?? '',
-          status: recipe.status ?? '',
-          paragraph_1: recipe.paragraph_1 ?? '',
-          paragraph_2: recipe.paragraph_2 ?? '',
-          image_url: recipe.image_url ?? '',
-          tag_ids: initialTagIds, // ✅ pré-remplit les tags
-        }
+      ? { ...defaultValues, ...recipe, category_id: recipe.category_id ?? undefined, tag_ids: initialTagIds }
       : defaultValues,
   })
 
   async function onSubmit(values: RecipeFormInput) {
-    const payloadBase = {
-      title: values.title,
-      slug: values.slug,
-      short_description: values.short_description,
-      content: values.content,
-      image: values.image || '',
-      image_url: values.image_url || '',
-      status: values.status || 'draft',
-      paragraph_1: values.paragraph_1 || '',
-      paragraph_2: values.paragraph_2 || '',
-      is_active: values.is_active,
-      category_id: values.category_id ?? undefined,
-      tag_ids: values.tag_ids,
-    }
+    const payload = { ...values, status: values.status || 'draft', category_id: values.category_id ?? undefined }
 
     let res
     if (type === 'Créer') {
-      res = await createRecipe(payloadBase)
+      res = await createRecipe(payload)
     } else {
       if (!recipeId) {
         toast({ variant: 'destructive', description: 'Recipe ID missing' })
         return
       }
-      res = await updateRecipe({ id: recipeId, ...payloadBase })
+      res = await updateRecipe({ id: recipeId, ...payload })
     }
 
     if (!res?.success) {
@@ -207,10 +155,7 @@ export default function RecipeForm({
       {/* Catégorie */}
       <div className="space-y-1">
         <Label>Catégorie</Label>
-        <select
-          {...form.register('category_id', { valueAsNumber: true })}
-          className="w-full border rounded px-3 py-2 text-sm"
-        >
+        <select {...form.register('category_id', { valueAsNumber: true })} className="w-full border rounded px-3 py-2 text-sm">
           <option value="">-- Choisir une catégorie --</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
@@ -225,15 +170,11 @@ export default function RecipeForm({
         <Label>Tags</Label>
         <select
           multiple
+          {...form.register('tag_ids')}
           className="w-full min-h-[120px] border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-          value={(form.watch('tag_ids') ?? []).map(String)}
-          onChange={(e) => {
-            const values = Array.from(e.target.selectedOptions).map((o) => Number(o.value))
-            form.setValue('tag_ids', values)
-          }}
         >
-          {tags?.map((t) => (
-            <option key={t.id} value={t.id.toString()}>
+          {tags.map((t) => (
+            <option key={t.id} value={t.id}>
               {t.name}
             </option>
           ))}
@@ -243,7 +184,7 @@ export default function RecipeForm({
         {form.watch('tag_ids')?.length ? (
           <div className="flex flex-wrap gap-2">
             {tags
-              ?.filter((t) => form.watch('tag_ids')?.includes(t.id))
+              .filter((t) => form.watch('tag_ids')?.includes(t.id))
               .map((t) => (
                 <span
                   key={t.id}

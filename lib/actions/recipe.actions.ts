@@ -125,14 +125,19 @@ export async function getRecipeById(id: number) {
   const recipe = await prisma.recipes.findUnique({
     where: { id },
     include: {
-      recipe_comments: true,
       recipesPostTags: { include: { tags: true } },
       recipe_categories: true,
     },
   })
   if (!recipe) throw new Error('Recette non trouvée')
-  return recipe
+
+  return {
+    ...recipe,
+    category_id: recipe.category_id ?? recipe.recipe_categories?.id ?? undefined,
+    tag_ids: recipe.recipesPostTags?.map((r: { tag_id: any }) => r.tag_id) ?? [],
+  }
 }
+
 
 /* =======================
    GET ONE RECIPE BY SLUG
@@ -141,13 +146,17 @@ export async function getRecipeBySlug(slug: string) {
   const recipe = await prisma.recipes.findUnique({
     where: { slug },
     include: {
-      recipe_comments: true,
       recipesPostTags: { include: { tags: true } },
       recipe_categories: true,
     },
   })
   if (!recipe) throw new Error('Recette non trouvée')
-  return recipe
+
+  return {
+    ...recipe,
+    category_id: recipe.category_id ?? recipe.recipe_categories?.id ?? undefined,
+    tag_ids: recipe.recipesPostTags?.map((r: { tag_id: any }) => r.tag_id) ?? [],
+  }
 }
 
 /* =======================
