@@ -369,6 +369,14 @@ export default function BlogForm({
         />
       </div>
 
+      <div className="flex items-center gap-2">
+        <Checkbox
+          checked={form.watch('featured')}
+          onCheckedChange={(v) => form.setValue('featured', Boolean(v))}
+        />
+        <Label>Blog en vedette</Label>
+      </div>
+
       <div className="space-y-1">
         <Label>Statut</Label>
         <Input

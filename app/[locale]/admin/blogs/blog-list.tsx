@@ -135,6 +135,7 @@ const BlogList = () => {
             <TableHead>Catégorie</TableHead>
             <TableHead>Tags</TableHead>
             <TableHead>Statut</TableHead>
+            <TableHead>À la une</TableHead>
             <TableHead className='w-[140px]'>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -158,7 +159,9 @@ const BlogList = () => {
 
               <TableCell>{blog.status ?? '-'}</TableCell>
 
-             
+               <TableCell>
+                {blog.featured ? 'Oui' : 'Non'}
+              </TableCell>
 
               <TableCell className='flex gap-1'>
                 <Button asChild variant='outline' size='sm'>
