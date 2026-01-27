@@ -162,7 +162,7 @@ export default function BlogForm({
           title: blog.title ?? '',
           slug: blog.slug ?? '',
           category_id: blog.category_id ?? undefined, // ✅ pré-remplit la catégorie
-          tag_ids: blog.blogs_post_tags?.map((bt: any) => bt.tag_id) ?? [], // ✅ pré-remplit les tags
+         tag_ids: blog.blog_tags?.map((bt: any) => bt.tag_id) ?? [], // ✅ pré-remplit les tags
           short_description: blog.short_description ?? '',
           full_content: blog.full_content ?? '',
 
@@ -249,7 +249,7 @@ export default function BlogForm({
       <div className="space-y-2">
         <Label>Tags</Label>
 
-        <select
+        <select 
           multiple
           className="
       w-full

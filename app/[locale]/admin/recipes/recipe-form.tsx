@@ -165,22 +165,42 @@ export default function RecipeForm({ type, recipe, recipeId, categories, tags }:
         </select>
       </div>
 
-      {/* Tags */}
-      <div className="space-y-2">
+      {/* Tags */} 
+     <div className="space-y-2">
         <Label>Tags</Label>
+
         <select
           multiple
-          {...form.register('tag_ids')}
-          className="w-full min-h-[120px] border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+          className="
+      w-full
+      min-h-[120px]
+      border
+      rounded-md
+      px-3
+      py-2
+      text-sm
+      bg-background
+      focus:outline-none
+      focus:ring-2
+      focus:ring-primary
+      focus:border-primary
+    "
+          value={(form.watch('tag_ids') ?? []).map(String)}
+          onChange={(e) => {
+            const values = Array.from(e.target.selectedOptions).map((o) =>
+              Number(o.value)
+            )
+            form.setValue('tag_ids', values)
+          }}
         >
           {tags.map((t) => (
-            <option key={t.id} value={t.id}>
+            <option key={t.id} value={t.id} className="py-1">
               {t.name}
             </option>
           ))}
         </select>
 
-        {/* Chips des tags */}
+        {/* Chips des tags sélectionnés */}
         {form.watch('tag_ids')?.length ? (
           <div className="flex flex-wrap gap-2">
             {tags
@@ -188,14 +208,27 @@ export default function RecipeForm({ type, recipe, recipeId, categories, tags }:
               .map((t) => (
                 <span
                   key={t.id}
-                  className="inline-flex items-center rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-medium"
+                  className="
+              inline-flex
+              items-center
+              rounded-full
+              bg-primary/10
+              text-primary
+              px-3
+              py-1
+              text-xs
+              font-medium
+            "
                 >
                   {t.name}
                   <button
                     type="button"
                     onClick={() => {
                       const current = form.getValues('tag_ids') ?? []
-                      form.setValue('tag_ids', current.filter((id) => id !== t.id))
+                      form.setValue(
+                        'tag_ids',
+                        current.filter((id) => id !== t.id)
+                      )
                     }}
                     className="ml-2 text-primary/60 hover:text-primary"
                   >

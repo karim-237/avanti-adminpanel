@@ -27,11 +27,11 @@ const UpdateTag = async ({ params }: UpdateTagProps) => {
   return ( 
     <main className="max-w-4xl mx-auto p-4">
       <div className="flex mb-4 gap-2 items-center">
-        <Link href={`/admin/blogs/tags`} className="underline">
+        <Link href={`/admin/recipes/tags`} className="underline">
           Tags
         </Link>
         <span>›</span>
-        <Link href={`/admin/blogs/tags/${tag.id}`}>{tag.name}</Link>
+        <Link href={`/admin/recipes/tags/${tag.id}`}>{tag.name}</Link>
       </div>
 
       <div className="my-8">

@@ -79,15 +79,29 @@ export async function updateRecipe(data: {
         ? tag_ids.split(',').map(Number)
         : []
 
-    // Supprimer les anciens liens tags si des tags sont fournis
-    if (tagIds.length) {
-      await prisma.recipesPostTags.deleteMany({ where: { recipe_id: id } })
-    }
+    // Supprimer les anciens liens tags
+    await prisma.recipes_post_tags.deleteMany({ where: { recipe_id: id } })
 
+    // Mettre à jour la recette
     const updatedRecipe = await prisma.recipes.update({
       where: { id },
       data: {
-        ...rest,
+        title: rest.title,
+        slug: rest.slug,
+        short_description: rest.short_description,
+        content: rest.content,
+        image: rest.image,
+        status: rest.status,
+        is_active: rest.is_active,
+        paragraph_1: rest.paragraph_1,
+        paragraph_2: rest.paragraph_2,
+        image_url: rest.image_url,
+
+        // ✅ Relation catégorie propre (au lieu de category_id brut)
+        recipe_categories: rest.category_id
+          ? { connect: { id: rest.category_id } }
+          : { disconnect: true },
+
         recipesPostTags: tagIds.length
           ? { createMany: { data: tagIds.map(tag_id => ({ tag_id })) } }
           : undefined,
@@ -103,6 +117,8 @@ export async function updateRecipe(data: {
     return { success: false, message: formatError(error) }
   }
 }
+
+
 
 /* =======================
    DELETE RECIPE
@@ -248,7 +264,7 @@ export async function updateRecipeCategory({ id, name, slug }: { id: number; nam
   try {
     const updatedCategory = await prisma.recipe_categories.update({
       where: { id },
-      data: { name, slug, updated_at: new Date() },
+      data: { name, slug, created_at: new Date() },
     })
     return { success: true, message: 'Catégorie mise à jour', data: updatedCategory }
   } catch (error) {

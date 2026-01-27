@@ -154,12 +154,27 @@ const BlogList = () => {
                 </Link>
               </TableCell>
 
-              <TableCell>{(blog as any).categoryName ?? '-'}</TableCell>
-              <TableCell>{blog.tags.join(', ') || '-'}</TableCell>
+              <TableCell>{(blog as any).categoryName ?? 'Aucune cantégorie'}</TableCell>
+              <TableCell>
+                {blog.tags?.length ? (
+                  <div className="flex flex-wrap gap-1">
+                    {blog.tags.map((tag: string, i: number) => (
+                      <span
+                        key={i}
+                        className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  'Aucun tag'
+                )}
+              </TableCell>
 
               <TableCell>{blog.status ?? '-'}</TableCell>
 
-               <TableCell>
+              <TableCell>
                 {blog.featured ? 'Oui' : 'Non'}
               </TableCell>
 

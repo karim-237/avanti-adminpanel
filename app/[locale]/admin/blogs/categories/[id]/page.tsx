@@ -28,7 +28,7 @@ const UpdateCategory = async ({ params }: UpdateCategoryProps) => {
     <main className="max-w-4xl mx-auto p-4">
       <div className="flex mb-4 gap-2 items-center">
         <Link href={`/admin/blogs/categories`} className="underline">
-          Tags
+          Catégories
         </Link>
         <span>›</span>
         <Link href={`/admin/blogs/categories/${category.id}`}>{category.name}</Link>

@@ -84,7 +84,7 @@ const CategoryList = () => {
 
                   {/* Bouton Modifier */}
                 <Button asChild variant="outline" size="sm">
-                  <Link href={`/${locale}/admin/blogs/categories/${cat.id}`}>Modifier</Link>
+                  <Link href={`/${locale}/admin/recipes/categories/${cat.id}`}>Modifier</Link>
                 </Button>
                 <DeleteDialog
                   id={String(cat.id)}

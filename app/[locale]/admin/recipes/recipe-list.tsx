@@ -29,6 +29,7 @@ type Recipe = {
   category_id?: number | null
   is_active?: boolean | null
   created_at?: Date | null
+  tags?: string[]
 }
 
 type RecipeListDataProps = {
@@ -66,10 +67,10 @@ const RecipeList = () => {
     setInputValue(value)
 
     clearTimeout((window as any).debounce)
-    ;(window as any).debounce = setTimeout(() => {
-      setPage(1)
-      loadData({ page: 1, query: value })
-    }, 500)
+      ; (window as any).debounce = setTimeout(() => {
+        setPage(1)
+        loadData({ page: 1, query: value })
+      }, 500)
   }
 
   useEffect(() => {
@@ -103,7 +104,7 @@ const RecipeList = () => {
 
 
         <div className="flex flex-wrap items-center gap-2">
-           <Button asChild variant="outline">
+          <Button asChild variant="outline">
             <Link href="/admin/recipes/categories">
               Liste des catégories
             </Link>
@@ -115,13 +116,13 @@ const RecipeList = () => {
             </Link>
           </Button>
 
-            <Button asChild>
-          <Link href='/admin/recipes/create'>Ajouter une recette</Link>
-        </Button>
-        
+          <Button asChild>
+            <Link href='/admin/recipes/create'>Ajouter une recette</Link>
+          </Button>
+
         </div>
 
-      
+
       </div>
 
       {/* Table */}
@@ -131,6 +132,7 @@ const RecipeList = () => {
             <TableHead>ID</TableHead>
             <TableHead>Titre</TableHead>
             <TableHead>Catégorie</TableHead>
+            <TableHead>Tags</TableHead>
             <TableHead>Actif</TableHead>
             <TableHead>Créé le</TableHead>
             <TableHead className='w-[120px]'>Actions</TableHead>
@@ -151,7 +153,21 @@ const RecipeList = () => {
                 </Link>
               </TableCell>
 
-              <TableCell>{recipe.categoryName ?? '-'}</TableCell>
+              <TableCell>{recipe.categoryName ?? 'Aucune catégorie'}</TableCell>
+
+              <TableCell>
+                {recipe.tags?.length ? (
+                  <div className='flex flex-wrap gap-1'>
+                    {recipe.tags.map((tag, i) => (
+                      <span key={i} className='px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary'>
+                        {tag}
+                      </span>
+                    ))} 
+                  </div>
+                ) : (
+                  'Aucun tag'
+                )}
+              </TableCell>
 
               <TableCell>
                 {recipe.is_active ? 'Oui' : 'Non'}
