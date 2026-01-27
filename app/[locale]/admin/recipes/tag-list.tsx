@@ -46,11 +46,11 @@ const TagList = () => {
 
         <div className="flex items-center gap-2">
           <Button asChild>
-            <Link href={`/${locale}/admin/blogs/tags/create`}>Ajouter un tag</Link>
+            <Link href={`/${locale}/admin/recipes/tags/create`}>Ajouter un tag</Link>
           </Button>
 
           <Button asChild variant="outline">
-            <Link href={`/${locale}/admin/blogs`}>← Retour aux blogs</Link>
+            <Link href={`/${locale}/admin/recipes`}>← Retour aux recettes</Link>
           </Button>
         </div>
       </div>
@@ -75,7 +75,7 @@ const TagList = () => {
               <TableCell className="flex gap-1">
                 {/* Bouton Modifier */}
                 <Button asChild variant="outline" size="sm">
-                  <Link href={`/${locale}/admin/blogs/tags/${tag.id}`}>Modifier</Link>
+                  <Link href={`/${locale}/admin/recipes/tags/${tag.id}`}>Modifier</Link>
                 </Button>
 
                 {/* Bouton Supprimer */}

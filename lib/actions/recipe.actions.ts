@@ -125,14 +125,25 @@ export async function updateRecipe(data: {
 ======================= */
 export async function deleteRecipe(id: number) {
   try {
-    await prisma.recipesPostTags.deleteMany({ where: { recipe_id: id } })
-    await prisma.recipes.delete({ where: { id } })
+    // 1️⃣ Supprimer les liens recette <-> tags
+    await prisma.recipes_post_tags.deleteMany({
+      where: { recipe_id: id },
+    })
+
+    // 2️⃣ Supprimer la recette
+    await prisma.recipes.delete({
+      where: { id },
+    })
+
     revalidatePath('/admin/recipes')
+
     return { success: true, message: 'Recette supprimée avec succès' }
   } catch (error) {
+    console.error('deleteRecipe error:', error)
     return { success: false, message: formatError(error) }
   }
 }
+
 
 /* =======================
    GET ONE RECIPE BY ID
@@ -297,7 +308,7 @@ export async function deleteRecipeCategory(id: number) {
 
 export async function deleteRecipeTag(id: number) {
   try {
-    await prisma.recipesPostTags.deleteMany({ where: { tag_id: id } })
+    await prisma.recipes_post_tags.deleteMany({ where: { tag_id: id } })
     await prisma.tags.delete({ where: { id } })
     revalidatePath('/admin/recipes/tags')
     return { success: true, message: 'Tag supprimé avec succès' }
