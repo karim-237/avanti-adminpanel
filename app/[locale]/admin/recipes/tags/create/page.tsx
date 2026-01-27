@@ -13,7 +13,7 @@ export default function CreateTagPage() {
           Ajoutez un nouveau tag.
         </p>
       </div>
-
+ 
       <TagForm type="Créer"/>
     </div>
   )

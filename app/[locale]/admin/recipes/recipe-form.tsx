@@ -25,14 +25,7 @@ function ImagePicker({
     <div className="flex gap-3 flex-wrap items-center">
       {value && (
         <div className="relative">
-          <Image
-            src={value}
-            width={100}
-            height={100}
-            alt=""
-            className="rounded border"
-          />
-
+          <Image src={value} width={100} height={100} alt="" className="rounded border" />
           <button
             type="button"
             onClick={() => onChange('')}
@@ -62,13 +55,8 @@ function ImagePicker({
                   method: 'POST',
                   body: formData,
                 })
-
                 const data = await res.json()
-
-                if (!res.ok) {
-                  throw new Error(data.error || 'Upload failed')
-                }
-
+                if (!res.ok) throw new Error(data.error || 'Upload failed')
                 onChange(data.url)
               } catch (err) {
                 console.error(err)
@@ -98,7 +86,8 @@ interface RecipeFormInput {
   paragraph_1: string
   paragraph_2: string
   image_url: string
-  category_id: string
+  category_id?: number
+  tag_ids: number[]
 }
 
 const defaultValues: RecipeFormInput = {
@@ -112,14 +101,18 @@ const defaultValues: RecipeFormInput = {
   paragraph_1: '',
   paragraph_2: '',
   image_url: '',
-  category_id: '',
+  category_id: undefined,
+  tag_ids: [],
 }
 
 interface RecipeFormProps {
   type: 'Créer' | 'Mettre à jour'
+  categories: { id: number; name: string }[]
+  tags: { id: number; name: string }[]
   recipe?: Partial<RecipeFormInput> & {
     id?: number
-    category_id?: number | string | null
+    category_id?: number | null
+    tag_ids?: number[] | { id: number }[]
   }
   recipeId?: number
 }
@@ -128,9 +121,15 @@ export default function RecipeForm({
   type,
   recipe,
   recipeId,
+  categories,
+  tags,
 }: RecipeFormProps) {
   const router = useRouter()
   const { toast } = useToast()
+
+  // Convert tag_ids to number array if it's array of objects
+  const initialTagIds =
+    recipe?.tag_ids?.map((t: any) => (typeof t === 'number' ? t : t.id)) ?? []
 
   const form = useForm<RecipeFormInput>({
     defaultValues: recipe
@@ -139,22 +138,19 @@ export default function RecipeForm({
           slug: recipe.slug ?? '',
           short_description: recipe.short_description ?? '',
           content: recipe.content ?? '',
-          category_id: recipe.category_id
-            ? String(recipe.category_id)
-            : '',
+          category_id: recipe.category_id ?? undefined, // ✅ pré-remplit la catégorie
           is_active: recipe.is_active ?? true,
           image: recipe.image ?? '',
           status: recipe.status ?? '',
           paragraph_1: recipe.paragraph_1 ?? '',
           paragraph_2: recipe.paragraph_2 ?? '',
           image_url: recipe.image_url ?? '',
+          tag_ids: initialTagIds, // ✅ pré-remplit les tags
         }
       : defaultValues,
   })
 
   async function onSubmit(values: RecipeFormInput) {
-    let res
-
     const payloadBase = {
       title: values.title,
       slug: values.slug,
@@ -166,30 +162,23 @@ export default function RecipeForm({
       paragraph_1: values.paragraph_1 || '',
       paragraph_2: values.paragraph_2 || '',
       is_active: values.is_active,
-      category_id: values.category_id
-        ? Number(values.category_id)
-        : undefined,
+      category_id: values.category_id ?? undefined,
+      tag_ids: values.tag_ids,
     }
 
+    let res
     if (type === 'Créer') {
       res = await createRecipe(payloadBase)
     } else {
       if (!recipeId) {
-        toast({
-          variant: 'destructive',
-          description: 'Recipe ID missing',
-        })
+        toast({ variant: 'destructive', description: 'Recipe ID missing' })
         return
       }
-
-      res = await updateRecipe({
-        id: recipeId,
-        ...payloadBase,
-      })
+      res = await updateRecipe({ id: recipeId, ...payloadBase })
     }
 
-    if (!res.success) {
-      toast({ variant: 'destructive', description: res.message })
+    if (!res?.success) {
+      toast({ variant: 'destructive', description: res?.message || 'Erreur' })
       return
     }
 
@@ -199,68 +188,119 @@ export default function RecipeForm({
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      {/* Titre */}
       <div className="space-y-1">
         <Label>Titre</Label>
         <Input {...form.register('title')} placeholder="Titre" />
       </div>
 
+      {/* Slug */}
       <div className="space-y-1">
         <Label>Slug</Label>
         <Input
           {...form.register('slug')}
           placeholder="Slug"
-          onBlur={() =>
-            form.setValue('slug', toSlug(form.getValues('title')))
-          }
+          onBlur={() => form.setValue('slug', toSlug(form.getValues('title')))}
         />
       </div>
 
+      {/* Catégorie */}
+      <div className="space-y-1">
+        <Label>Catégorie</Label>
+        <select
+          {...form.register('category_id', { valueAsNumber: true })}
+          className="w-full border rounded px-3 py-2 text-sm"
+        >
+          <option value="">-- Choisir une catégorie --</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Tags */}
+      <div className="space-y-2">
+        <Label>Tags</Label>
+        <select
+          multiple
+          className="w-full min-h-[120px] border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+          value={(form.watch('tag_ids') ?? []).map(String)}
+          onChange={(e) => {
+            const values = Array.from(e.target.selectedOptions).map((o) => Number(o.value))
+            form.setValue('tag_ids', values)
+          }}
+        >
+          {tags?.map((t) => (
+            <option key={t.id} value={t.id.toString()}>
+              {t.name}
+            </option>
+          ))}
+        </select>
+
+        {/* Chips des tags */}
+        {form.watch('tag_ids')?.length ? (
+          <div className="flex flex-wrap gap-2">
+            {tags
+              ?.filter((t) => form.watch('tag_ids')?.includes(t.id))
+              .map((t) => (
+                <span
+                  key={t.id}
+                  className="inline-flex items-center rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-medium"
+                >
+                  {t.name}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const current = form.getValues('tag_ids') ?? []
+                      form.setValue('tag_ids', current.filter((id) => id !== t.id))
+                    }}
+                    className="ml-2 text-primary/60 hover:text-primary"
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Astuce : maintiens Ctrl (Windows) ou Cmd (Mac) pour sélectionner plusieurs tags
+          </p>
+        )}
+      </div>
+
+      {/* Description courte */}
       <div className="space-y-1">
         <Label>Description courte</Label>
-        <Textarea
-          {...form.register('short_description')}
-          placeholder="Description courte"
-        />
+        <Textarea {...form.register('short_description')} placeholder="Description courte" />
       </div>
 
+      {/* Images */}
       <div className="space-y-2">
         <Label>Image de miniature</Label>
-        <ImagePicker
-          value={form.watch('image_url')}
-          onChange={(url) => form.setValue('image_url', url)}
-        />
+        <ImagePicker value={form.watch('image_url')} onChange={(url) => form.setValue('image_url', url)} />
       </div>
-
       <div className="space-y-2">
         <Label>Image principale</Label>
-        <ImagePicker
-          value={form.watch('image')}
-          onChange={(url) => form.setValue('image', url)}
-        />
+        <ImagePicker value={form.watch('image')} onChange={(url) => form.setValue('image', url)} />
       </div>
 
+      {/* Paragraphes */}
       <div className="space-y-1">
         <Label>Paragraphe 1 de la recette</Label>
-        <Textarea
-          {...form.register('paragraph_1')}
-          placeholder="Paragraphe 1"
-        />
+        <Textarea {...form.register('paragraph_1')} placeholder="Paragraphe 1" />
       </div>
-
       <div className="space-y-1">
         <Label>Paragraphe 2 de la recette</Label>
-        <Textarea
-          {...form.register('paragraph_2')}
-          placeholder="Paragraphe 2"
-        />
+        <Textarea {...form.register('paragraph_2')} placeholder="Paragraphe 2" />
       </div>
 
+      {/* Actif */}
       <div className="flex items-center gap-2">
         <Checkbox
           checked={form.watch('is_active')}
-          onCheckedChange={(v) =>
-            form.setValue('is_active', Boolean(v))
-          }
+          onCheckedChange={(v) => form.setValue('is_active', Boolean(v))}
         />
         <Label>Actif</Label>
       </div>

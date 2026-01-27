@@ -38,8 +38,7 @@ const UpdateRecipe = async ({ params }: UpdateRecipeProps) => {
         <RecipeForm
           type="Mettre à jour"
           recipe={recipe}
-          recipeId={recipe.id}
-        />
+          recipeId={recipe.id} categories={[]} tags={[]}        />
       </div>
     </main>
   )

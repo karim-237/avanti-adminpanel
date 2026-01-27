@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { createBlogTag, updateBlogTag } from '@/lib/actions/blog.actions'
+import { createRecipeTag, updateRecipeTag } from '@/lib/actions/recipe.actions'
 import { toSlug } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 
@@ -40,7 +40,7 @@ export default function TagForm({
 
     if (isCreateMode) {
       // create
-      res = await createBlogTag(values)
+      res = await createRecipeTag(values)
     } else {
       if (!tagId) {
         toast({ variant: 'destructive', description: 'Tag ID manquant' })
@@ -48,7 +48,7 @@ export default function TagForm({
       }
 
       // update
-      res = await updateBlogTag({ id: tagId, ...values })
+      res = await updateRecipeTag({ id: tagId, ...values })
     }
 
     if (!res?.success) {
@@ -59,7 +59,7 @@ export default function TagForm({
     toast({ description: res.message })
 
     // ✅ Redirection vers la liste des tags après succès
-    router.push(`/admin/blogs/tags`)
+    router.push(`/admin/recipes/tags`)
   }
 
   return (
@@ -88,6 +88,6 @@ export default function TagForm({
           ? 'Créer le tag'
           : 'Mettre à jour le tag'}
       </Button>
-    </form> 
+    </form>
   )
 }

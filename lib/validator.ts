@@ -278,6 +278,11 @@ export const RecipeInputSchema = z.object({
   image_url: z.string(),
   image: z.string().optional(),
   isPublished: z.boolean().default(false),
+  tag_ids: z.union([
+  z.string(),
+  z.array(z.coerce.number()),
+]).optional().default(''),
+
 })
 
 export const RecipeUpdateSchema = RecipeInputSchema.extend({

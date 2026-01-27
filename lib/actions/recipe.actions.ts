@@ -1,28 +1,25 @@
 'use server'
 
 import { prisma } from '@/lib/db/prisma'
-import { formatError } from '@/lib/utils'
+import { formatError, toSlug } from '@/lib/utils'
 import { revalidatePath } from 'next/cache'
-import {
-  RecipeInputSchema,
-  RecipeUpdateSchema,
-} from '@/lib/validator'
-import { getSetting } from './setting.actions'
-import { toSlug } from '@/lib/utils'
+import { RecipeInputSchema } from '@/lib/validator'
 
 /* =======================
-   CREATE
+   CREATE RECIPE
 ======================= */
 export async function createRecipe(input: unknown) {
   try {
     const recipe = await RecipeInputSchema.parseAsync(input)
-    const slug =
-      recipe.slug && recipe.slug.trim() !== ''
-        ? recipe.slug
-        : toSlug(recipe.title)
-    const categoryId = recipe.category_id
-      ? Number(recipe.category_id) // ⚡ converti string -> number
-      : undefined;
+    const slug = recipe.slug?.trim() || toSlug(recipe.title)
+    const categoryId = recipe.category_id ? Number(recipe.category_id) : undefined
+
+    // ⚡ Gestion des tag_ids
+    const tagIds: number[] = Array.isArray(recipe.tag_ids)
+      ? recipe.tag_ids.map(Number)
+      : typeof recipe.tag_ids === 'string' && recipe.tag_ids.length
+        ? recipe.tag_ids.split(',').map(Number)
+        : []
 
     const createdRecipe = await prisma.recipes.create({
       data: {
@@ -36,24 +33,26 @@ export async function createRecipe(input: unknown) {
         paragraph_1: recipe.paragraph_1,
         paragraph_2: recipe.paragraph_2,
         image_url: recipe.image_url,
-
+        recipesPostTags: tagIds.length
+          ? { createMany: { data: tagIds.map(tag_id => ({ tag_id })) } }
+          : undefined,
+      },
+      include: {
+        recipe_categories: true,
+        recipesPostTags: { include: { tags: true } },
       },
     })
 
     revalidatePath('/admin/recipes')
 
-    return {
-      success: true,
-      message: 'Recette créée avec succès',
-      data: createdRecipe,
-    }
+    return { success: true, message: 'Recette créée avec succès', data: createdRecipe }
   } catch (error) {
     return { success: false, message: formatError(error) }
   }
 }
 
 /* =======================
-   UPDATE
+   UPDATE RECIPE
 ======================= */
 export async function updateRecipe(data: {
   id: number
@@ -68,76 +67,91 @@ export async function updateRecipe(data: {
   paragraph_1?: string
   paragraph_2?: string
   image_url?: string
+  tag_ids?: number[] | string
 }) {
- try {
-    const { id, ...rest } = data // <-- on enlève id
+  try {
+    const { id, tag_ids, ...rest } = data
+
+    // ⚡ Conversion tag_ids en array de nombres
+    const tagIds: number[] = Array.isArray(tag_ids)
+      ? tag_ids.map(Number)
+      : typeof tag_ids === 'string' && tag_ids.length
+        ? tag_ids.split(',').map(Number)
+        : []
+
+    // Supprimer les anciens liens tags si des tags sont fournis
+    if (tagIds.length) {
+      await prisma.recipesPostTags.deleteMany({ where: { recipe_id: id } })
+    }
+
     const updatedRecipe = await prisma.recipes.update({
       where: { id },
-      data: rest, // <-- id n’est plus inclus
+      data: {
+        ...rest,
+        recipesPostTags: tagIds.length
+          ? { createMany: { data: tagIds.map(tag_id => ({ tag_id })) } }
+          : undefined,
+      },
+      include: {
+        recipe_categories: true,
+        recipesPostTags: { include: { tags: true } },
+      },
     })
 
-    return {
-      success: true,
-      message: 'Recette mise à jour avec succès',
-      data: updatedRecipe,
-    }
+    return { success: true, message: 'Recette mise à jour avec succès', data: updatedRecipe }
   } catch (error) {
     return { success: false, message: formatError(error) }
   }
 }
 
 /* =======================
-   DELETE
+   DELETE RECIPE
 ======================= */
 export async function deleteRecipe(id: number) {
   try {
-    await prisma.recipes.delete({
-      where: { id },
-    })
-
+    await prisma.recipesPostTags.deleteMany({ where: { recipe_id: id } })
+    await prisma.recipes.delete({ where: { id } })
     revalidatePath('/admin/recipes')
-
-    return {
-      success: true,
-      message: 'Recette supprimée avec succès',
-    }
+    return { success: true, message: 'Recette supprimée avec succès' }
   } catch (error) {
     return { success: false, message: formatError(error) }
   }
 }
 
 /* =======================
-   GET ONE BY ID
+   GET ONE RECIPE BY ID
 ======================= */
 export async function getRecipeById(id: number) {
   const recipe = await prisma.recipes.findUnique({
     where: { id },
     include: {
       recipe_comments: true,
+      recipesPostTags: { include: { tags: true } },
+      recipe_categories: true,
     },
   })
-
-  if (!recipe) throw new Error('Recipe not found')
+  if (!recipe) throw new Error('Recette non trouvée')
   return recipe
 }
 
 /* =======================
-   GET ONE BY SLUG
+   GET ONE RECIPE BY SLUG
 ======================= */
 export async function getRecipeBySlug(slug: string) {
   const recipe = await prisma.recipes.findUnique({
     where: { slug },
     include: {
       recipe_comments: true,
+      recipesPostTags: { include: { tags: true } },
+      recipe_categories: true,
     },
   })
-
-  if (!recipe) throw new Error('Recipe not found')
+  if (!recipe) throw new Error('Recette non trouvée')
   return recipe
 }
 
 /* =======================
-   GET ALL (ADMIN)
+   GET ALL RECIPES (ADMIN)
 ======================= */
 export async function getAllRecipesForAdmin({
   query = '',
@@ -148,13 +162,10 @@ export async function getAllRecipesForAdmin({
   page?: number
   limit?: number
 }) {
-  
   const take = limit || 10
   const skip = (page - 1) * take
 
-  const where = query
-    ? { title: { contains: query, mode: 'insensitive' } }
-    : {}
+  const where = query ? { title: { contains: query, mode: 'insensitive' } } : {}
 
   const [recipes, totalRecipes] = await Promise.all([
     prisma.recipes.findMany({
@@ -162,12 +173,22 @@ export async function getAllRecipesForAdmin({
       orderBy: { created_at: 'desc' },
       skip,
       take,
+      include: {
+        recipe_categories: true,
+        recipesPostTags: { include: { tags: true } },
+      },
     }),
     prisma.recipes.count({ where }),
   ])
 
+  const formattedRecipes = recipes.map((r: any) => ({
+    ...r,
+    categoryName: r.recipe_categories?.name ?? '-',
+    tags: r.recipesPostTags?.map((t: { tags: { name: any } }) => t.tags.name) ?? [],
+  }))
+
   return {
-    recipes,
+    recipes: formattedRecipes,
     totalPages: Math.ceil(totalRecipes / take),
     totalRecipes,
     from: skip + 1,
@@ -176,15 +197,96 @@ export async function getAllRecipesForAdmin({
 }
 
 /* =======================
-   GET ALL CATEGORIES
+   CATEGORIES & TAGS RECIPES
 ======================= */
-export async function getAllRecipeCategories(): Promise<string[]> {
-  const categories = await prisma.recipe_categories.findMany({
-    select: { name: true },
+export async function getAllRecipeCategories(): Promise<{ id: number; name: string, slug: string }[]> {
+  return prisma.recipe_categories.findMany({
+    select: { id: true, name: true, slug: true },
     orderBy: { name: 'asc' },
   })
+}
 
-  return categories.map((c: { name: any }) => c.name)
+export async function getAllRecipeTags(): Promise<{ id: number; name: string, slug: string }[]> {
+  return prisma.tags.findMany({
+    select: { id: true, name: true, slug: true },
+    orderBy: { name: 'asc' },
+  })
+}
+
+export async function createRecipeCategory(input: { name: string; slug?: string }) {
+  try {
+    const slug = input.slug?.trim() || toSlug(input.name)
+    const category = await prisma.recipe_categories.create({ data: { name: input.name, slug } })
+    revalidatePath('/admin/recipes')
+    return { success: true, message: 'Catégorie créée', data: category }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+export async function createRecipeTag(input: { name: string; slug?: string }) {
+  try {
+    const slug = input.slug?.trim() || toSlug(input.name)
+    const tag = await prisma.tags.create({ data: { name: input.name, slug } })
+    revalidatePath('/admin/recipes')
+    return { success: true, message: 'Tag créé', data: tag }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+export async function updateRecipeCategory({ id, name, slug }: { id: number; name: string; slug: string }) {
+  try {
+    const updatedCategory = await prisma.recipe_categories.update({
+      where: { id },
+      data: { name, slug, updated_at: new Date() },
+    })
+    return { success: true, message: 'Catégorie mise à jour', data: updatedCategory }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+export async function updateRecipeTag({ id, name, slug }: { id: number; name: string; slug: string }) {
+  try {
+    const updatedTag = await prisma.tags.update({
+      where: { id },
+      data: { name, slug: slug.trim() || toSlug(name) },
+    })
+    return { success: true, message: 'Tag mis à jour', data: updatedTag }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+export async function deleteRecipeCategory(id: number) {
+  try {
+    await prisma.recipes.updateMany({ where: { category_id: id }, data: { category_id: null } })
+    await prisma.recipe_categories.delete({ where: { id } })
+    revalidatePath('/admin/recipes/categories')
+    return { success: true, message: 'Catégorie supprimée' }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+export async function deleteRecipeTag(id: number) {
+  try {
+    await prisma.recipesPostTags.deleteMany({ where: { tag_id: id } })
+    await prisma.tags.delete({ where: { id } })
+    revalidatePath('/admin/recipes/tags')
+    return { success: true, message: 'Tag supprimé avec succès' }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+export async function getRecipeTagById(id: number) {
+  return prisma.tags.findUnique({ where: { id } })
+}
+
+export async function getRecipeCategoryById(id: number) {
+  return prisma.recipe_categories.findUnique({ where: { id } })
 }
 
 

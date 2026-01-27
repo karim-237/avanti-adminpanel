@@ -25,6 +25,7 @@ type Recipe = {
   id: number
   title: string
   slug: string
+  categoryName: string
   category_id?: number | null
   is_active?: boolean | null
   created_at?: Date | null
@@ -100,9 +101,27 @@ const RecipeList = () => {
           )}
         </div>
 
-        <Button asChild>
+
+        <div className="flex flex-wrap items-center gap-2">
+           <Button asChild variant="outline">
+            <Link href="/admin/recipes/categories">
+              Liste des catégories
+            </Link>
+          </Button>
+
+          <Button asChild variant="outline">
+            <Link href="/admin/recipes/tags">
+              Liste des tags
+            </Link>
+          </Button>
+
+            <Button asChild>
           <Link href='/admin/recipes/create'>Ajouter une recette</Link>
         </Button>
+        
+        </div>
+
+      
       </div>
 
       {/* Table */}
@@ -132,7 +151,7 @@ const RecipeList = () => {
                 </Link>
               </TableCell>
 
-              <TableCell>{recipe.category_id ?? '-'}</TableCell>
+              <TableCell>{recipe.categoryName ?? '-'}</TableCell>
 
               <TableCell>
                 {recipe.is_active ? 'Oui' : 'Non'}
