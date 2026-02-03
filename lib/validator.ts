@@ -278,7 +278,7 @@ export const SettingInputSchema = z.object({
     why_us: z.string().optional(),
   }).optional(),
 
- chooseBenefits: z.array(
+ chooseBenefits: z.array(   
   z.object({
     title: z.string().optional().or(z.literal('')),
     description: z.string().optional().or(z.literal('')),
