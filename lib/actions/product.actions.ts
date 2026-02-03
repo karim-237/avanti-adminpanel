@@ -121,7 +121,7 @@ export async function updateProduct(data: {
         lang: "en"
       }
     })
-
+ 
     if (existingTranslation && existingTranslation.is_auto) {
 
       const enName = await translateToEnglish(data.name)
