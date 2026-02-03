@@ -32,6 +32,11 @@ const links = [
 
 
   {
+    title: 'Messages',
+    href: '/admin/messages',
+  },
+
+  {
     title: 'Users',
     href: '/admin/users',
   },

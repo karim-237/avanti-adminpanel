@@ -115,14 +115,14 @@ export const getAboutChooseSection = async (): Promise<AboutChooseData> => {
 
     chooseBenefits: benefits.length
       ? benefits.map((b: { title: any; description: any }) => ({
-          title: b.title ?? '',
-          description: b.description ?? '',
-        }))
+        title: b.title ?? '',
+        description: b.description ?? '',
+      }))
       : [
-          { title: '', description: '' },
-          { title: '', description: '' },
-          { title: '', description: '' },
-        ],
+        { title: '', description: '' },
+        { title: '', description: '' },
+        { title: '', description: '' },
+      ],
   }
 }
 
@@ -143,17 +143,24 @@ export const updateSetting = async (newSetting: ISettingInput) => {
       url: newSetting.site.url,
       maintenance_mode: newSetting.common.isMaintenanceMode,
       maintenance_message: newSetting.common.maintenanceMessage,
-      newsletter_video: newSetting.newsletterVideo ?? '',
     }
 
-    const updatedSetting = await prisma.setting.upsert({
-      where: { id: 1 },
-      update: payload,
-      create: {
-        id: 1,
-        ...payload,
-      },
-    })
+    // Récupérer l'éventuelle ligne existante
+    const existing = await prisma.setting.findFirst()
+
+    let updatedSetting
+
+    if (existing) {
+      updatedSetting = await prisma.setting.update({
+        where: { id: existing.id },
+        data: payload,
+      })
+    } else {
+      updatedSetting = await prisma.setting.create({
+        data: payload,
+      })
+    }
+
 
 
 

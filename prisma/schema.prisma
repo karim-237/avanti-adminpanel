@@ -171,8 +171,8 @@ model comments {
 model contact_messages {
   id         Int       @id @default(autoincrement())
   name       String?   @db.VarChar(100)
-  phone      String?   @db.VarChar(50)
   email      String?   @db.VarChar(150)
+  subject    String?   @db.VarChar(200) 
   message    String?
   created_at DateTime? @default(now()) @db.Timestamp(6)
 }
