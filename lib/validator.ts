@@ -271,7 +271,7 @@ export const SettingInputSchema = z.object({
     left_image: z.string().optional(),
     right_image: z.string().optional(),
   }).optional(),
-
+  
   choose: z.object({
     title: z.string().optional(),
     description: z.string().optional(),
