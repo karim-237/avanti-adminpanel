@@ -189,7 +189,7 @@ if (existingTranslation && existingTranslation.is_auto) {
 
   const enParagraph1 = rest.paragraph_1
     ? await translateToEnglish(rest.paragraph_1)
-    : null
+    : null 
 
   const enParagraph2 = rest.paragraph_2
     ? await translateToEnglish(rest.paragraph_2)
