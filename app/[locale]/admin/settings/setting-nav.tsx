@@ -8,6 +8,7 @@ import {
   Languages,
   Package,
   SettingsIcon,
+  Video,
 } from 'lucide-react'
 
 import { useEffect, useState } from 'react'
@@ -60,19 +61,26 @@ const SettingNav = () => {
             hash: 'setting-carousels',
             icon: <ImageIcon />,
           },
-          { 
-            name: 'Langues', 
-            hash: 'setting-languages', 
-            icon: <Languages /> },
+
+          {
+            name: 'Video de présentation',
+            hash: 'setting-newsletter-video',
+            icon: <Video />
+          },
+
+          {
+            name: 'Langues',
+            hash: 'setting-languages',
+            icon: <Languages />
+          },
 
         ].map((item) => (
           <Button
             onClick={() => handleScroll(item.hash)}
             key={item.hash}
             variant={active === item.hash ? 'outline' : 'ghost'}
-            className={`justify-start ${
-              active === item.hash ? '' : 'border border-transparent'
-            }`}
+            className={`justify-start ${active === item.hash ? '' : 'border border-transparent'
+              }`}
           >
             {item.icon}
             {item.name}

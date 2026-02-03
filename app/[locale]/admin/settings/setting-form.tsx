@@ -124,11 +124,11 @@ const SettingForm = ({ setting }: { setting: ISettingInput }) => {
       <form className="space-y-4" method="post" onSubmit={form.handleSubmit(onSubmit)}>
         <SiteInfoForm id="setting-site-info" form={form} />
         <CommonForm id="setting-common" form={form} />
-        <AboutChooseForm id="setting-about-choose" form={form} />
+        <AboutChooseForm id="about-section" form={form} />
 
         {!loading && (
           <>
-            <CarouselForm defaultBanners={homeBanners} form={form} />
+            <CarouselForm id="setting-carousels" defaultBanners={homeBanners} form={form} />
             <VideoUploadForm id="setting-newsletter-video" form={form} />
           </>
         )}
