@@ -138,7 +138,7 @@ export async function updateProduct(data: {
         where: { id: existingTranslation.id },
         data: {
           name: enName,
-          description: enDescription,
+          description: enDescription, 
           additional_info: enAdditionalInfo,
           slug: toSlug(enName),
         }
