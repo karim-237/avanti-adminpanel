@@ -171,41 +171,47 @@ export async function updateRecipe(data: {
     })
 
      // ===== GESTION TRADUCTION =====
+const existingTranslation = await prisma.recipe_translations.findUnique({
+  where: {
+    recipe_id_lang: {
+      recipe_id: id,
+      lang: "en"
+    }
+  }
+})
 
-    const existingTranslation = await prisma.recipe_translations.findFirst({
-      where: {
+if (existingTranslation && existingTranslation.is_auto) {
+  const enTitle = await translateToEnglish(rest.title)
+
+  const enShortDesc = rest.short_description
+    ? await translateToEnglish(rest.short_description)
+    : null
+
+  const enParagraph1 = rest.paragraph_1
+    ? await translateToEnglish(rest.paragraph_1)
+    : null
+
+  const enParagraph2 = rest.paragraph_2
+    ? await translateToEnglish(rest.paragraph_2)
+    : null
+
+  await prisma.recipe_translations.update({
+    where: {
+      recipe_id_lang: {
         recipe_id: id,
         lang: "en"
       }
-    })
-
-    if (existingTranslation && existingTranslation.is_auto) {
-      const enTitle = await translateToEnglish(rest.title)
-
-      const enShortDesc = rest.short_description
-        ? await translateToEnglish(rest.short_description)
-        : null
-
-      const enParagraph1 = rest.paragraph_1
-        ? await translateToEnglish(rest.paragraph_1)
-        : null
-
-      const enParagraph2 = rest.paragraph_2
-        ? await translateToEnglish(rest.paragraph_2)
-        : null
-
-      await prisma.recipe_translations.update({
-        where: { id: existingTranslation.id },
-        data: {
-          title: enTitle,
-          short_description: enShortDesc,
-          paragraph_1: enParagraph1,
-          paragraph_2: enParagraph2,
-          slug: toSlug(enTitle),
-          updated_at: new Date()
-        }
-      })
+    },
+    data: {
+      title: enTitle,
+      short_description: enShortDesc,
+      paragraph_1: enParagraph1,
+      paragraph_2: enParagraph2,
+      slug: toSlug(enTitle),
     }
+  })
+}
+
 
     return { success: true, message: 'Recette mise à jour avec succès', data: updatedRecipe }
   } catch (error) {

@@ -13,7 +13,7 @@ interface UpdateRecipeProps {
 }
 
 const UpdateRecipe = async ({ params }: UpdateRecipeProps) => {
-  const { id } = params  // 👈 OK dans ton cas précis
+  const { id } = await params  // 👈 OK dans ton cas précis
   const numericId = Number(id)
   
   if (Number.isNaN(numericId)) notFound()

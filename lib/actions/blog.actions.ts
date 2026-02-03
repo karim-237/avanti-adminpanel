@@ -187,40 +187,51 @@ export async function updateBlog(data: {
      // ===== GESTION TRADUCTION =====
 
     const existingTranslation = await prisma.blog_translations.findUnique({
-      where: { blog_id: data.id }
-    })
-
-    if (existingTranslation && existingTranslation.is_auto) {
-      const enTitle = await translateToEnglish(data.title)
-      const enShortDesc = data.short_description
-        ? await translateToEnglish(data.short_description)
-        : null
-
-      const enParagraph1 = data.paragraph_1
-        ? await translateToEnglish(data.paragraph_1)
-        : null
-
-      const enParagraph2 = data.paragraph_2
-        ? await translateToEnglish(data.paragraph_2)
-        : null
-
-      const enAuthorBio = data.author_bio
-        ? await translateToEnglish(data.author_bio)
-        : null
-
-      await prisma.blog_translations.update({
-        where: { blog_id: data.id },
-        data: {
-          title: enTitle,
-          short_description: enShortDesc,
-          paragraph_1: enParagraph1,
-          paragraph_2: enParagraph2,
-          author_bio: enAuthorBio,
-          slug: toSlug(enTitle),
-          updated_at: new Date()
-        }
-      })
+  where: {
+    blog_id_lang: {
+      blog_id: data.id,
+      lang: "en"
     }
+  }
+})
+
+if (existingTranslation && existingTranslation.is_auto) {
+  const enTitle = await translateToEnglish(data.title)
+  const enShortDesc = data.short_description
+    ? await translateToEnglish(data.short_description)
+    : null
+
+  const enParagraph1 = data.paragraph_1
+    ? await translateToEnglish(data.paragraph_1)
+    : null
+
+  const enParagraph2 = data.paragraph_2
+    ? await translateToEnglish(data.paragraph_2)
+    : null
+
+  const enAuthorBio = data.author_bio
+    ? await translateToEnglish(data.author_bio)
+    : null
+
+  await prisma.blog_translations.update({
+    where: {
+      blog_id_lang: {
+        blog_id: data.id,
+        lang: "en"
+      }
+    },
+    data: {
+      title: enTitle,
+      short_description: enShortDesc,
+      paragraph_1: enParagraph1,
+      paragraph_2: enParagraph2,
+      author_bio: enAuthorBio,
+      slug: toSlug(enTitle),
+      updated_at: new Date()
+    }
+  })
+}
+
 
     return { success: true, message: 'Blog mis à jour avec succès', data: updatedBlog }
   } catch (error) {

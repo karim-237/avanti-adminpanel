@@ -141,7 +141,6 @@ export async function updateProduct(data: {
           description: enDescription,
           additional_info: enAdditionalInfo,
           slug: toSlug(enName),
-          updated_at: new Date()
         }
       })
     }
