@@ -59,7 +59,7 @@ export default function VideoUploadForm<
 
   function removeVideo() {
     form.setValue('newsletterVideo' as Path<T>, '' as any)
-  }
+  } 
 
 
   return (
