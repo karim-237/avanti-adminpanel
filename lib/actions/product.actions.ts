@@ -125,7 +125,7 @@ export async function updateProduct(data: {
     if (existingTranslation && existingTranslation.is_auto) {
 
       const enName = await translateToEnglish(data.name)
-
+ 
       const enDescription = data.description
         ? await translateToEnglish(data.description)
         : null
