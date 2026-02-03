@@ -51,6 +51,11 @@ const SettingNav = () => {
             icon: <SettingsIcon />,
           },
           {
+            name: 'Section à propos',
+            hash: 'about-section',
+            icon: <Info />,
+          },
+          {
             name: 'Bannières',
             hash: 'setting-carousels',
             icon: <ImageIcon />,

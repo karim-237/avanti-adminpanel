@@ -1,11 +1,39 @@
 'use server'
 
 import { prisma } from '@/lib/db/prisma'
-import { formatError } from '@/lib/utils'
+import { formatError, toSlug } from '@/lib/utils'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { ProductInputSchema, ProductUpdateSchema } from '@/lib/validator'
 import { getSetting } from './setting.actions'
+
+
+/* =======================
+   FONCTION DE TRADUCTION
+======================= */
+async function translateToEnglish(text: string): Promise<string> {
+  try {
+    const res = await fetch("https://libretranslate.com/translate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        q: text,
+        source: "fr",
+        target: "en",
+        format: "text"
+      })
+    })
+
+    const data = await res.json()
+    return data.translatedText || text
+  } catch (error) {
+    console.error("Translation error:", error)
+    return text
+  }
+}
+
 
 /* =======================
    CREATE
@@ -27,6 +55,32 @@ export async function createProduct(input: unknown) {
         additional_info: product.additional_info,
         active: product.active ?? true,
       },
+    })
+
+    // ====== TRADUCTION AUTOMATIQUE ======
+
+    const enName = await translateToEnglish(product.name)
+
+    const enDescription = product.description
+      ? await translateToEnglish(product.description)
+      : null
+
+    const enAdditionalInfo = product.additional_info
+      ? await translateToEnglish(product.additional_info)
+      : null
+
+    await prisma.product_translations.create({
+      data: {
+        product_id: createdProduct.id,
+        lang: "en",
+        name: enName,
+        description: enDescription,
+        additional_info: enAdditionalInfo,
+        slug: product.slug
+          ? toSlug(enName)
+          : null,
+        is_auto: true
+      }
     })
 
     revalidatePath('/admin/products')
@@ -58,6 +112,39 @@ export async function updateProduct(data: {
       where: { id: data.id },
       data,
     })
+
+      // ===== GESTION TRADUCTION =====
+
+    const existingTranslation = await prisma.product_translations.findFirst({
+      where: {
+        product_id: data.id,
+        lang: "en"
+      }
+    })
+
+    if (existingTranslation && existingTranslation.is_auto) {
+
+      const enName = await translateToEnglish(data.name)
+
+      const enDescription = data.description
+        ? await translateToEnglish(data.description)
+        : null
+
+      const enAdditionalInfo = data.additional_info
+        ? await translateToEnglish(data.additional_info)
+        : null
+
+      await prisma.product_translations.update({
+        where: { id: existingTranslation.id },
+        data: {
+          name: enName,
+          description: enDescription,
+          additional_info: enAdditionalInfo,
+          slug: toSlug(enName),
+          updated_at: new Date()
+        }
+      })
+    }
 
     return { success: true, message: 'Produit mis à jour avec succès', data: updatedProduct }
   } catch (error) {

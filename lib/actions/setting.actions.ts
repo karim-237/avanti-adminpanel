@@ -5,7 +5,8 @@ import data from '../data'
 import { prisma } from '../db/prisma'
 import { formatError } from '../utils'
 import { cookies } from 'next/headers'
-import { home_banners, Setting } from '@prisma/client'
+import { about_section, choose_section, home_banners, Setting } from '@prisma/client'
+import { AboutChooseData } from '@/types/types'
 
 // Cache global pour éviter de recharger la DB à chaque requête
 const globalForSettings = global as unknown as {
@@ -21,6 +22,8 @@ const parseSetting = async (setting: Setting): Promise<ISettingInput> => {
   const banners: home_banners[] = await prisma.home_banners.findMany({
     orderBy: [{ position: 'asc' }, { id: 'asc' }],
   })
+
+  const newsletter = await prisma.newsletter_section.findFirst()
 
   return {
     site: {
@@ -42,7 +45,7 @@ const parseSetting = async (setting: Setting): Promise<ISettingInput> => {
       maintenanceMessage: setting.maintenance_message ?? '',
       defaultTheme: 'light',
       defaultColor: 'default',
-      
+
     },
     // Injecte les bannières ici !
     carousels: banners.map((b: home_banners) => ({
@@ -56,6 +59,9 @@ const parseSetting = async (setting: Setting): Promise<ISettingInput> => {
     })),
     availableLanguages: [{ code: 'fr', name: 'Français' }],
     defaultLanguage: 'fr',
+
+    // 🔥 AJOUT DE LA VIDÉO
+    newsletterVideo: newsletter?.video ?? '',
   }
 }
 
@@ -85,6 +91,43 @@ export const getSetting = async (): Promise<ISettingInput> => {
 }
 
 // ----------
+// getAboutChooseSection
+// ----------
+
+export const getAboutChooseSection = async (): Promise<AboutChooseData> => {
+  const about = await prisma.about_section.findFirst()
+  const choose = await prisma.choose_section.findFirst()
+  const benefits = await prisma.choose_benefits.findMany()
+
+  return {
+    about: {
+      main_title: about?.main_title ?? '',
+      description: about?.description ?? '',
+      left_image: about?.left_image ?? '',
+      right_image: about?.right_image ?? '',
+    },
+
+    choose: {
+      title: choose?.title ?? '',
+      description: choose?.description ?? '',
+      why_us: choose?.why_us ?? '',
+    },
+
+    chooseBenefits: benefits.length
+      ? benefits.map((b: { title: any; description: any }) => ({
+          title: b.title ?? '',
+          description: b.description ?? '',
+        }))
+      : [
+          { title: '', description: '' },
+          { title: '', description: '' },
+          { title: '', description: '' },
+        ],
+  }
+}
+
+
+// ----------
 // UPDATE
 // ----------
 
@@ -100,6 +143,7 @@ export const updateSetting = async (newSetting: ISettingInput) => {
       url: newSetting.site.url,
       maintenance_mode: newSetting.common.isMaintenanceMode,
       maintenance_message: newSetting.common.maintenanceMessage,
+      newsletter_video: newSetting.newsletterVideo ?? '',
     }
 
     const updatedSetting = await prisma.setting.upsert({
@@ -110,6 +154,17 @@ export const updateSetting = async (newSetting: ISettingInput) => {
         ...payload,
       },
     })
+
+
+
+    // --- Mise à jour de la vidéo dans newsletter_section ---
+    if (newSetting.newsletterVideo !== undefined) {
+      await prisma.newsletter_section.upsert({
+        where: { id: 1 }, // ou selon ton identifiant réel
+        update: { video: newSetting.newsletterVideo },
+        create: { id: 1, video: newSetting.newsletterVideo },
+      })
+    }
 
     // --- Mise à jour des bannières ---
     if (newSetting.carousels && newSetting.carousels.length > 0) {
@@ -164,5 +219,45 @@ export const setCurrencyOnServer = async (newCurrency: string) => {
   return {
     success: true,
     message: 'Currency updated successfully',
+  }
+}
+
+
+
+// ---------- ABOUT SECTION ----------
+export const getAboutSection = async () => {
+  const about = await prisma.about_section.findFirst()
+  return about ?? null
+}
+
+export const updateAboutSection = async (data: Partial<about_section>) => {
+  try {
+    const updated = await prisma.about_section.upsert({
+      where: { id: 1 },
+      update: data,
+      create: { id: 1, ...data },
+    })
+    return { success: true, data: updated }
+  } catch (err) {
+    return { success: false, message: formatError(err) }
+  }
+}
+
+// ---------- CHOOSE SECTION ----------
+export const getChooseSection = async () => {
+  const choose = await prisma.choose_section.findFirst()
+  return choose ?? null
+}
+
+export const updateChooseSection = async (data: Partial<choose_section>) => {
+  try {
+    const updated = await prisma.choose_section.upsert({
+      where: { id: 1 },
+      update: data,
+      create: { id: 1, ...data },
+    })
+    return { success: true, data: updated }
+  } catch (err) {
+    return { success: false, message: formatError(err) }
   }
 }

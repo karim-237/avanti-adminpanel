@@ -6,6 +6,36 @@ import { revalidatePath } from 'next/cache'
 import { BlogInputSchema } from '@/lib/validator'
 import { toSlug } from '@/lib/utils'
 
+
+
+
+/* =======================
+   FONCTION DE TRADUCTION
+======================= */
+async function translateToEnglish(text: string): Promise<string> {
+  try {
+    const res = await fetch("https://libretranslate.com/translate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        q: text,
+        source: "fr",
+        target: "en",
+        format: "text"
+      })
+    })
+
+    const data = await res.json()
+    return data.translatedText || text
+  } catch (error) {
+    console.error("Translation error:", error)
+    return text
+  }
+}
+
+
 /* =======================
    CREATE BLOG
 ======================= */
@@ -47,6 +77,40 @@ export async function createBlog(input: unknown) {
           include: { tags: true },
         },
       },
+    })
+
+
+     // ====== TRADUCTION AUTOMATIQUE EN ANGLAIS ======
+
+    const enTitle = await translateToEnglish(blog.title)
+    const enShortDesc = blog.short_description
+      ? await translateToEnglish(blog.short_description)
+      : null
+
+    const enParagraph1 = blog.paragraph_1
+      ? await translateToEnglish(blog.paragraph_1)
+      : null
+
+    const enParagraph2 = blog.paragraph_2
+      ? await translateToEnglish(blog.paragraph_2)
+      : null
+
+    const enAuthorBio = blog.author_bio
+      ? await translateToEnglish(blog.author_bio)
+      : null
+
+    await prisma.blog_translations.create({
+      data: {
+        blog_id: createdBlog.id,
+        lang: "en",
+        title: enTitle,
+        short_description: enShortDesc,
+        paragraph_1: enParagraph1,
+        paragraph_2: enParagraph2,
+        author_bio: enAuthorBio,
+        slug: toSlug(enTitle),
+        is_auto: true
+      }
     })
 
     revalidatePath('/admin/blog')
@@ -118,6 +182,45 @@ export async function updateBlog(data: {
         blog_tags: { include: { tags: true } },
       },
     })
+
+
+     // ===== GESTION TRADUCTION =====
+
+    const existingTranslation = await prisma.blog_translations.findUnique({
+      where: { blog_id: data.id }
+    })
+
+    if (existingTranslation && existingTranslation.is_auto) {
+      const enTitle = await translateToEnglish(data.title)
+      const enShortDesc = data.short_description
+        ? await translateToEnglish(data.short_description)
+        : null
+
+      const enParagraph1 = data.paragraph_1
+        ? await translateToEnglish(data.paragraph_1)
+        : null
+
+      const enParagraph2 = data.paragraph_2
+        ? await translateToEnglish(data.paragraph_2)
+        : null
+
+      const enAuthorBio = data.author_bio
+        ? await translateToEnglish(data.author_bio)
+        : null
+
+      await prisma.blog_translations.update({
+        where: { blog_id: data.id },
+        data: {
+          title: enTitle,
+          short_description: enShortDesc,
+          paragraph_1: enParagraph1,
+          paragraph_2: enParagraph2,
+          author_bio: enAuthorBio,
+          slug: toSlug(enTitle),
+          updated_at: new Date()
+        }
+      })
+    }
 
     return { success: true, message: 'Blog mis à jour avec succès', data: updatedBlog }
   } catch (error) {
@@ -239,18 +342,53 @@ export async function getAllBlogTags(): Promise<{ id: number; name: string }[]> 
 export async function createBlogCategory(input: { name: string; slug?: string }) {
   try {
     const slug = input.slug?.trim() || toSlug(input.name)
-    const category = await prisma.blog_categories.create({ data: { name: input.name, slug } })
+
+    const category = await prisma.blog_categories.create({
+      data: { name: input.name, slug }
+    })
+
+    const nameEn = await translateToEnglish(input.name)
+
+    await prisma.blog_category_translations.create({
+      data: {
+        category_id: category.id,
+        lang: "en",
+        name: nameEn,
+        slug: toSlug(nameEn),
+        is_auto: true
+      }
+    })
+
     revalidatePath('/admin/blog')
+
     return { success: true, message: 'Catégorie créée', data: category }
   } catch (error) {
     return { success: false, message: formatError(error) }
   }
 }
 
+
 export async function createBlogTag(input: { name: string; slug?: string }) {
   try {
     const slug = input.slug?.trim() || toSlug(input.name)
     const tag = await prisma.tags.create({ data: { name: input.name, slug } })
+
+     // ===== TRADUCTION AUTOMATIQUE =====
+    
+        const enName = await translateToEnglish(input.name)
+        const enSlug = toSlug(enName)
+    
+        await prisma.tag_translations.create({
+          data: {
+            tag_id: tag.id,
+            lang: "en",
+            name: enName,
+            slug: enSlug,
+            is_auto: true
+          }
+        })
+
+
     revalidatePath('/admin/blog')
     return { success: true, message: 'Tag créé', data: tag }
   } catch (error) {
@@ -364,6 +502,31 @@ export async function updateBlogTag({ id, name, slug }: { id: number; name: stri
       },
     })
 
+
+     // ===== GESTION DE LA TRADUCTION =====
+    
+        const existingTranslation = await prisma.tag_translations.findFirst({
+          where: {
+            tag_id: id,
+            lang: "en"
+          }
+        })
+    
+        if (existingTranslation && existingTranslation.is_auto) {
+    
+          const enName = await translateToEnglish(name)
+          const enSlug = toSlug(enName)
+    
+          await prisma.tag_translations.update({
+            where: { id: existingTranslation.id },
+            data: {
+              name: enName,
+              slug: enSlug,
+              updated_at: new Date()
+            }
+          })
+        }
+
     // On revalide le cache pour que les changements soient visibles sur l'admin
     revalidatePath('/admin/blogs/tags')
 
@@ -398,42 +561,31 @@ export async function updateBlogCategory(payload: UpdateBlogCategoryPayload) {
   try {
     const { id, name, slug } = payload
 
-    // 1️⃣ Vérifier que la catégorie existe
-    const existingCategory = await prisma.blog_categories.findUnique({
-      where: { id },
-    })
-
-    if (!existingCategory) {
-      return {
-        success: false,
-        message: 'Catégorie introuvable',
-      }
-    }
-
-    // 2️⃣ Vérifier l’unicité du slug (hors catégorie courante)
-    const slugExists = await prisma.blog_categories.findFirst({
-      where: {
-        slug,
-        NOT: { id },
-      },
-    })
-
-    if (slugExists) {
-      return {
-        success: false,
-        message: 'Une autre catégorie utilise déjà ce slug',
-      }
-    }
-
-    // 3️⃣ Mise à jour
     const updatedCategory = await prisma.blog_categories.update({
       where: { id },
       data: {
         name,
         slug,
-        updated_at: new Date(), // optionnel mais propre
+        updated_at: new Date(),
       },
     })
+
+    const existingTranslation = await prisma.blog_category_translations.findUnique({
+      where: { category_id: id }
+    })
+
+    if (existingTranslation && existingTranslation.is_auto) {
+      const nameEn = await translateToEnglish(name)
+
+      await prisma.blog_category_translations.update({
+        where: { category_id: id },
+        data: {
+          name: nameEn,
+          slug: toSlug(nameEn),
+          updated_at: new Date()
+        }
+      })
+    }
 
     return {
       success: true,
@@ -441,14 +593,13 @@ export async function updateBlogCategory(payload: UpdateBlogCategoryPayload) {
       data: updatedCategory,
     }
   } catch (error) {
-    console.error('updateBlogCategory error:', error)
-
     return {
       success: false,
       message: 'Erreur lors de la mise à jour de la catégorie',
     }
   }
 }
+
 
 
 /* ===========================

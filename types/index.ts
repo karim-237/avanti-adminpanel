@@ -29,6 +29,25 @@ export type IReviewDetails = IReviewInput & {
 }
 export type IProductInput = z.infer<typeof ProductInputSchema>
 
+
+export interface IAboutChooseInput {
+  about: {
+    main_title: string
+    description: string
+    left_image: string
+    right_image: string
+  }
+  choose: {
+    title: string
+    description: string
+    why_us: string
+  }
+  chooseBenefits: {
+    title: string
+    description: string
+  }[]
+}
+
 export type Data = {
   settings: ISettingInput[]
   webPages: IWebPageInput[]
@@ -81,6 +100,9 @@ export type IWebPageInput = z.infer<typeof WebPageInputSchema>
 // setting
 export type ICarousel = z.infer<typeof CarouselSchema>
 export type ISettingInput = z.infer<typeof SettingInputSchema>
+export type IAboutInput = z.infer<typeof SettingInputSchema.shape.about>
+export type IChooseInput = z.infer<typeof SettingInputSchema.shape.choose>
+export type IChooseBenefitInput = z.infer<typeof SettingInputSchema.shape.chooseBenefits>
 export type ClientSetting = ISettingInput & {
   currency: string
 }

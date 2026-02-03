@@ -5,6 +5,34 @@ import { formatError, toSlug } from '@/lib/utils'
 import { revalidatePath } from 'next/cache'
 import { RecipeInputSchema } from '@/lib/validator'
 
+
+/* =======================
+   FONCTION DE TRADUCTION
+======================= */
+async function translateToEnglish(text: string): Promise<string> {
+  try {
+    const res = await fetch("https://libretranslate.com/translate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        q: text,
+        source: "fr",
+        target: "en",
+        format: "text"
+      })
+    })
+
+    const data = await res.json()
+    return data.translatedText || text
+  } catch (error) {
+    console.error("Translation error:", error)
+    return text
+  }
+}
+
+
 /* =======================
    CREATE RECIPE
 ======================= */
@@ -42,6 +70,36 @@ export async function createRecipe(input: unknown) {
         recipesPostTags: { include: { tags: true } },
       },
     })
+
+     // ====== TRADUCTION AUTOMATIQUE EN ANGLAIS ======
+
+    const enTitle = await translateToEnglish(recipe.title)
+
+    const enShortDesc = recipe.short_description
+      ? await translateToEnglish(recipe.short_description)
+      : null
+
+    const enParagraph1 = recipe.paragraph_1
+      ? await translateToEnglish(recipe.paragraph_1)
+      : null
+
+    const enParagraph2 = recipe.paragraph_2
+      ? await translateToEnglish(recipe.paragraph_2)
+      : null
+
+    await prisma.recipe_translations.create({
+      data: {
+        recipe_id: createdRecipe.id,
+        lang: "en",
+        title: enTitle,
+        short_description: enShortDesc,
+        paragraph_1: enParagraph1,
+        paragraph_2: enParagraph2,
+        slug: toSlug(enTitle),
+        is_auto: true
+      }
+    })
+
 
     revalidatePath('/admin/recipes')
 
@@ -111,6 +169,43 @@ export async function updateRecipe(data: {
         recipesPostTags: { include: { tags: true } },
       },
     })
+
+     // ===== GESTION TRADUCTION =====
+
+    const existingTranslation = await prisma.recipe_translations.findFirst({
+      where: {
+        recipe_id: id,
+        lang: "en"
+      }
+    })
+
+    if (existingTranslation && existingTranslation.is_auto) {
+      const enTitle = await translateToEnglish(rest.title)
+
+      const enShortDesc = rest.short_description
+        ? await translateToEnglish(rest.short_description)
+        : null
+
+      const enParagraph1 = rest.paragraph_1
+        ? await translateToEnglish(rest.paragraph_1)
+        : null
+
+      const enParagraph2 = rest.paragraph_2
+        ? await translateToEnglish(rest.paragraph_2)
+        : null
+
+      await prisma.recipe_translations.update({
+        where: { id: existingTranslation.id },
+        data: {
+          title: enTitle,
+          short_description: enShortDesc,
+          paragraph_1: enParagraph1,
+          paragraph_2: enParagraph2,
+          slug: toSlug(enTitle),
+          updated_at: new Date()
+        }
+      })
+    }
 
     return { success: true, message: 'Recette mise à jour avec succès', data: updatedRecipe }
   } catch (error) {
@@ -252,18 +347,53 @@ export async function getAllRecipeTags(): Promise<{ id: number; name: string, sl
 export async function createRecipeCategory(input: { name: string; slug?: string }) {
   try {
     const slug = input.slug?.trim() || toSlug(input.name)
-    const category = await prisma.recipe_categories.create({ data: { name: input.name, slug } })
+
+    const category = await prisma.recipe_categories.create({
+      data: { name: input.name, slug }
+    })
+
+    const nameEn = await translateToEnglish(input.name)
+
+    await prisma.recipe_category_translations.create({
+      data: {
+        category_id: category.id,
+        lang: "en",
+        name: nameEn,
+        slug: toSlug(nameEn),
+        is_auto: true
+      }
+    })
+
     revalidatePath('/admin/recipes')
+
     return { success: true, message: 'Catégorie créée', data: category }
+
   } catch (error) {
     return { success: false, message: formatError(error) }
   }
 }
 
+
 export async function createRecipeTag(input: { name: string; slug?: string }) {
   try {
     const slug = input.slug?.trim() || toSlug(input.name)
     const tag = await prisma.tags.create({ data: { name: input.name, slug } })
+
+
+      // ===== TRADUCTION AUTOMATIQUE =====
+
+    const enName = await translateToEnglish(input.name)
+    const enSlug = toSlug(enName)
+
+    await prisma.tag_translations.create({
+      data: {
+        tag_id: tag.id,
+        lang: "en",
+        name: enName,
+        slug: enSlug,
+        is_auto: true
+      }
+    })
     revalidatePath('/admin/recipes')
     return { success: true, message: 'Tag créé', data: tag }
   } catch (error) {
@@ -275,13 +405,33 @@ export async function updateRecipeCategory({ id, name, slug }: { id: number; nam
   try {
     const updatedCategory = await prisma.recipe_categories.update({
       where: { id },
-      data: { name, slug, created_at: new Date() },
+      data: { name, slug, updated_at: new Date() },
     })
+
+    const existingTranslation = await prisma.recipe_category_translations.findUnique({
+      where: { category_id: id }
+    })
+
+    if (existingTranslation && existingTranslation.is_auto) {
+      const nameEn = await translateToEnglish(name)
+
+      await prisma.recipe_category_translations.update({
+        where: { category_id: id },
+        data: {
+          name: nameEn,
+          slug: toSlug(nameEn),
+          updated_at: new Date()
+        }
+      })
+    }
+
     return { success: true, message: 'Catégorie mise à jour', data: updatedCategory }
+
   } catch (error) {
     return { success: false, message: formatError(error) }
   }
 }
+
 
 export async function updateRecipeTag({ id, name, slug }: { id: number; name: string; slug: string }) {
   try {
@@ -289,6 +439,32 @@ export async function updateRecipeTag({ id, name, slug }: { id: number; name: st
       where: { id },
       data: { name, slug: slug.trim() || toSlug(name) },
     })
+
+    // ===== GESTION DE LA TRADUCTION =====
+
+    const existingTranslation = await prisma.tag_translations.findFirst({
+      where: {
+        tag_id: id,
+        lang: "en"
+      }
+    })
+
+    if (existingTranslation && existingTranslation.is_auto) {
+
+      const enName = await translateToEnglish(name)
+      const enSlug = toSlug(enName)
+
+      await prisma.tag_translations.update({
+        where: { id: existingTranslation.id },
+        data: {
+          name: enName,
+          slug: enSlug,
+          updated_at: new Date()
+        }
+      })
+    }
+
+    
     return { success: true, message: 'Tag mis à jour', data: updatedTag }
   } catch (error) {
     return { success: false, message: formatError(error) }

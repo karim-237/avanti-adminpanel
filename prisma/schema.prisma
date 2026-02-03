@@ -12,7 +12,6 @@ enum UserRole {
   ADMIN
 }
 
-
 model User {
   id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email          String   @unique @db.VarChar(255)
@@ -107,7 +106,7 @@ model blogs {
   full_content      String?
   author            String?           @default("Admin") @db.VarChar(100)
   category          String?           @default("All") @db.VarChar(50)
-  publish_date DateTime @default(now()) @db.Timestamp(6)
+  publish_date      DateTime          @default(now()) @db.Timestamp(6)
   status            String?           @default("published") @db.VarChar(20)
   meta_title        String?           @db.VarChar(255)
   meta_description  String?
@@ -215,6 +214,7 @@ model newsletter_section {
   title      String    @default("Recevez nos dernières offres et nouveautés") @db.VarChar(255)
   subtitle   String    @default("Abonnez-vous") @db.VarChar(255)
   image_url  String    @default("") @db.VarChar(500)
+  video      String?
   created_at DateTime? @default(now()) @db.Timestamp(6)
   updated_at DateTime? @default(now()) @db.Timestamp(6)
 }
@@ -285,7 +285,6 @@ model recipes_post_tags {
   @@id([recipe_id, tag_id])
 }
 
-
 model recipe_comments {
   id         Int       @id @default(autoincrement())
   recipe_id  Int
@@ -348,10 +347,9 @@ model social_links {
 }
 
 model tags {
-  id        Int         @id @default(autoincrement())
-  name      String      @db.VarChar(255)
-  slug      String      @db.VarChar(255)
-  blog_tags blog_tags[]
-
+  id              Int                 @id @default(autoincrement())
+  name            String              @db.VarChar(255)
+  slug            String              @db.VarChar(255)
+  blog_tags       blog_tags[]
   recipesPostTags recipes_post_tags[]
 }

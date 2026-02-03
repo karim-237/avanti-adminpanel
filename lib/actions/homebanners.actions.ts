@@ -2,6 +2,34 @@
 
 import { prisma } from '../db/prisma'
 
+
+/* =======================
+   FONCTION DE TRADUCTION
+======================= */
+async function translateToEnglish(text: string): Promise<string> {
+  try {
+    const res = await fetch("https://libretranslate.com/translate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        q: text,
+        source: "fr",
+        target: "en",
+        format: "text"
+      })
+    })
+
+    const data = await res.json()
+    return data.translatedText || text
+  } catch (error) {
+    console.error("Translation error:", error)
+    return text
+  }
+}
+
+
 export async function getHomeBanners() {
   try {
     const banners = await prisma.home_banners.findMany({
@@ -40,6 +68,31 @@ export async function createHomeBanner(payload: {
       },
     })
 
+       // ===== TRADUCTION AUTOMATIQUE =====
+
+    const enTitle = payload.title
+      ? await translateToEnglish(payload.title)
+      : null
+
+    const enSubtitle = payload.subtitle
+      ? await translateToEnglish(payload.subtitle)
+      : null
+
+    const enDescription = payload.description
+      ? await translateToEnglish(payload.description)
+      : null
+
+    await prisma.home_banner_translations.create({
+      data: {
+        banner_id: banner.id,
+        lang: "en",
+        title: enTitle,
+        subtitle: enSubtitle,
+        description: enDescription,
+        is_auto: true
+      }
+    })
+
     return { success: true, data: banner, message: 'Bannière créée avec succès' }
   } catch (err) {
     console.error('createHomeBanner error:', err)
@@ -69,6 +122,40 @@ export async function updateHomeBanner(payload: {
         updated_at: new Date(),
       },
     })
+
+    // ===== GESTION DE LA TRADUCTION =====
+
+    const existingTranslation = await prisma.home_banner_translations.findFirst({
+      where: {
+        banner_id: payload.id,
+        lang: "en"
+      }
+    })
+
+    if (existingTranslation && existingTranslation.is_auto) {
+
+      const enTitle = payload.title
+        ? await translateToEnglish(payload.title)
+        : existingTranslation.title
+
+      const enSubtitle = payload.subtitle
+        ? await translateToEnglish(payload.subtitle)
+        : existingTranslation.subtitle
+
+      const enDescription = payload.description
+        ? await translateToEnglish(payload.description)
+        : existingTranslation.description
+
+      await prisma.home_banner_translations.update({
+        where: { id: existingTranslation.id },
+        data: {
+          title: enTitle,
+          subtitle: enSubtitle,
+          description: enDescription,
+          updated_at: new Date()
+        }
+      })
+    }
 
     return { success: true, data: banner, message: 'Bannière mise à jour' }
   } catch (err) {

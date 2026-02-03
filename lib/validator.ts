@@ -262,6 +262,28 @@ export const SettingInputSchema = z.object({
   carousels: z
     .array(CarouselSchema),
   defaultLanguage: z.string(),
+  newsletterVideo: z.string().optional(),
+
+  // 🔹 Nouvelle section About + Choose
+  about: z.object({
+    main_title: z.string().optional(),
+    description: z.string().optional(),
+    left_image: z.string().optional(),
+    right_image: z.string().optional(),
+  }).optional(),
+
+  choose: z.object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+    why_us: z.string().optional(),
+  }).optional(),
+
+  chooseBenefits: z.array(
+    z.object({
+      title: z.string(),
+      description: z.string(),
+    })
+  ).optional(),
 })
 
 
@@ -279,9 +301,9 @@ export const RecipeInputSchema = z.object({
   image: z.string().optional(),
   isPublished: z.boolean().default(false),
   tag_ids: z.union([
-  z.string(),
-  z.array(z.coerce.number()),
-]).optional().default(''),
+    z.string(),
+    z.array(z.coerce.number()),
+  ]).optional().default(''),
 
 })
 

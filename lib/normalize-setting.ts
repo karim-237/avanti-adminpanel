@@ -53,5 +53,8 @@ export function normalizeSetting(
       : [],
 
     defaultLanguage: input?.defaultLanguage ?? 'fr',
+
+    // 🔥 NOUVEAU CHAMP
+    newsletterVideo: input?.newsletterVideo ?? '',
   }
 }
